@@ -30,8 +30,8 @@ export interface CalendarProps {
 
   // Localization
   locale?: {
-    weekDays?: string[];
-    monthNames?: string[];
+    weekDays?: [string, string, string, string, string, string, string];
+    monthNames?: [string, string, string, string, string, string, string, string, string, string, string, string];
   };
 
   // Theme
