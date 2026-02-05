@@ -221,6 +221,9 @@ const Calendar = ({
 
     for (let i = 0; i < startOffset; i++) days.push(null);
     for (let d = 1; d <= last.getDate(); d++) days.push(new Date(y, m, d));
+        // Pad with trailing empty cells to complete the grid (ensure 7-column layout)
+    const remainingCells = (7 - (days.length % 7)) % 7;
+    for (let i = 0; i < remainingCells; i++) days.push(null);
 
     return days;
   };
