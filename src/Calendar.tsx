@@ -115,6 +115,10 @@ const Calendar = ({
   const [currentMonth, setCurrentMonth] = useState<Date>(
     selectedDate ?? new Date()
   );
+  const [activePanel, setActivePanel] = useState<"month" | "year" | null>(null);
+  const [yearPageStart, setYearPageStart] = useState<number>(
+    (selectedDate ?? new Date()).getFullYear() - 6
+  );
 
   const cellSize =
     size === "sm"
@@ -206,6 +210,32 @@ const Calendar = ({
     const newMonth = new Date(currentMonth);
     newMonth.setMonth(newMonth.getMonth() + offset);
     setCurrentMonth(newMonth);
+    setActivePanel(null);
+  };
+
+  const toggleMonthPanel = () => {
+    if (disableMonthNav) return;
+    setActivePanel((prev) => (prev === "month" ? null : "month"));
+  };
+
+  const toggleYearPanel = () => {
+    if (disableMonthNav) return;
+    setYearPageStart(currentMonth.getFullYear() - 6);
+    setActivePanel((prev) => (prev === "year" ? null : "year"));
+  };
+
+  const setMonth = (monthIndex: number) => {
+    const next = new Date(currentMonth);
+    next.setMonth(monthIndex);
+    setCurrentMonth(next);
+    setActivePanel(null);
+  };
+
+  const setYear = (year: number) => {
+    const next = new Date(currentMonth);
+    next.setFullYear(year);
+    setCurrentMonth(next);
+    setActivePanel(null);
   };
 
   // Generate days
@@ -243,10 +273,30 @@ const Calendar = ({
           </button>
         )}
 
-        <h2 className="font-bold text-xl text-gray-900">
-          {locale.monthNames![currentMonth.getMonth()]}{" "}
-          {currentMonth.getFullYear()}
-        </h2>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleMonthPanel}
+            className={`font-bold text-xl text-gray-900 px-2 py-1 rounded-lg transition-colors ${
+              disableMonthNav ? "cursor-default" : "hover:bg-gray-100"
+            }`}
+            aria-label="Select month"
+            aria-expanded={activePanel === "month"}
+          >
+            {locale.monthNames![currentMonth.getMonth()]}
+          </button>
+          <button
+            type="button"
+            onClick={toggleYearPanel}
+            className={`font-bold text-xl text-gray-900 px-2 py-1 rounded-lg transition-colors ${
+              disableMonthNav ? "cursor-default" : "hover:bg-gray-100"
+            }`}
+            aria-label="Select year"
+            aria-expanded={activePanel === "year"}
+          >
+            {currentMonth.getFullYear()}
+          </button>
+        </div>
 
         {!disableMonthNav && (
           <button
@@ -260,6 +310,81 @@ const Calendar = ({
           </button>
         )}
       </div>
+
+      {activePanel === "month" && !disableMonthNav && (
+        <div className="mb-4 p-4 bg-white border border-gray-100 rounded-xl shadow-sm">
+          <div className="grid grid-cols-3 gap-2">
+            {locale.monthNames!.map((name, index) => {
+              const isCurrent = index === currentMonth.getMonth();
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => setMonth(index)}
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    isCurrent
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  {name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {activePanel === "year" && !disableMonthNav && (
+        <div className="mb-4 p-4 bg-white border border-gray-100 rounded-xl shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <button
+              type="button"
+              onClick={() => setYearPageStart((prev) => prev - 12)}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              aria-label="Previous years"
+            >
+              <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <span className="text-sm font-semibold text-gray-700">
+              {yearPageStart} - {yearPageStart + 11}
+            </span>
+            <button
+              type="button"
+              onClick={() => setYearPageStart((prev) => prev + 12)}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              aria-label="Next years"
+            >
+              <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {Array.from({ length: 12 }, (_, i) => yearPageStart + i).map(
+              (year) => {
+                const isCurrent = year === currentMonth.getFullYear();
+                return (
+                  <button
+                    key={year}
+                    type="button"
+                    onClick={() => setYear(year)}
+                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      isCurrent
+                        ? "bg-blue-600 text-white"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    {year}
+                  </button>
+                );
+              }
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Week days */}
       <div className="grid grid-cols-7 gap-2 mb-2">
