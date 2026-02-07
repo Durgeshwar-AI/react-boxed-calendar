@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { themes } from "./themes";
 
 export interface CalendarProps {
   // Modes
@@ -53,6 +54,8 @@ export interface CalendarProps {
 
   // Size
   size?: "sm" | "md" | "lg";
+  // theme Name 
+  themeName?: "light" | "dark" | "metallic";
 }
 
 const Calendar = ({
@@ -94,24 +97,14 @@ const Calendar = ({
     ],
   },
 
-  theme = {
-    selectedBg: "bg-blue-600",
-    selectedText: "text-white",
-
-    todayBg: "bg-blue-100",
-    todayText: "text-blue-700",
-
-    normalText: "text-gray-700",
-    normalHoverBg: "hover:bg-gray-100",
-
-    disabledBg: "bg-gray-50",
-    disabledText: "text-gray-300",
-
-    borderRadius: "rounded-xl",
-  },
-
+  theme = {},
+  themeName = "light",
   size = "md",
 }: CalendarProps) => {
+  const resolvedTheme = {
+    ...themes[themeName],
+    ...theme, // custom overrides
+  };
   const [currentMonth, setCurrentMonth] = useState<Date>(
     selectedDate ?? new Date()
   );
@@ -425,17 +418,17 @@ const Calendar = ({
               className={`
                 inline-flex items-center justify-center font-medium transition-all
                 ${cellSize}
-                ${theme.borderRadius}
+                ${resolvedTheme.borderRadius}
                 ${
                   disabled
-                    ? `${theme.disabledBg} ${theme.disabledText} cursor-not-allowed`
+                    ? `${resolvedTheme.disabledBg} ${resolvedTheme.disabledText} cursor-not-allowed`
                     : isSelected
-                    ? `${theme.selectedBg} ${theme.selectedText} scale-105 shadow-lg`
+                    ? `${resolvedTheme.selectedBg} ${resolvedTheme.selectedText} scale-105 shadow-lg`
                     : isToday(day) && highlightToday
-                    ? `${theme.todayBg} ${theme.todayText}`
+                    ? `${resolvedTheme.todayBg} ${resolvedTheme.todayText}`
                     : isInRange
                     ? "bg-blue-50 text-blue-600"
-                    : `${theme.normalText} ${theme.normalHoverBg} hover:scale-105`
+                    : `${resolvedTheme.normalText} ${resolvedTheme.normalHoverBg} hover:scale-105`
                 }
               `}
             >
