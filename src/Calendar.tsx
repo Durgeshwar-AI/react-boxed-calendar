@@ -58,7 +58,7 @@ export interface CalendarProps {
   // Size
   size?: "sm" | "md" | "lg";
   // theme Name 
-  themeName?: "light" | "dark" | "metallic";
+  themeName?: "light" | "dark" | "metallic" | "cyberpunk" | "retro" | "nature";
 
   // Custom sizing (optional) - overrides size preset
   customSize?: {
@@ -131,8 +131,8 @@ const Calendar = ({
     size === "sm"
       ? "w-8 h-8 text-xs"
       : size === "lg"
-      ? "w-14 h-14 text-lg"
-      : "w-10 h-10 text-sm"; // md default
+        ? "w-14 h-14 text-lg"
+        : "w-10 h-10 text-sm"; // md default
 
   // Custom sizing styles with explicit px units
   const cellStyle = customSize?.cell
@@ -301,9 +301,8 @@ const Calendar = ({
           <button
             type="button"
             onClick={toggleMonthPanel}
-            className={`font-bold text-xl ${resolvedTheme.normalText} px-2 py-1 rounded-lg transition-colors ${
-              disableMonthNav ? "cursor-default" : `${resolvedTheme.normalHoverBg}`
-            }`}
+            className={`font-bold text-xl ${resolvedTheme.normalText} px-2 py-1 rounded-lg transition-colors ${disableMonthNav ? "cursor-default" : `${resolvedTheme.normalHoverBg}`
+              }`}
             aria-label="Select month"
             aria-expanded={activePanel === "month"}
           >
@@ -312,9 +311,8 @@ const Calendar = ({
           <button
             type="button"
             onClick={toggleYearPanel}
-            className={`font-bold text-xl ${resolvedTheme.normalText} px-2 py-1 rounded-lg transition-colors ${
-              disableMonthNav ? "cursor-default" : `${resolvedTheme.normalHoverBg}`
-            }`}
+            className={`font-bold text-xl ${resolvedTheme.normalText} px-2 py-1 rounded-lg transition-colors ${disableMonthNav ? "cursor-default" : `${resolvedTheme.normalHoverBg}`
+              }`}
             aria-label="Select year"
             aria-expanded={activePanel === "year"}
           >
@@ -345,11 +343,10 @@ const Calendar = ({
                   key={name}
                   type="button"
                   onClick={() => setMonth(index)}
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    isCurrent
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${isCurrent
                       ? `${resolvedTheme.selectedBg} text-white`
                       : `${resolvedTheme.normalText} ${resolvedTheme.normalHoverBg}`
-                  }`}
+                    }`}
                 >
                   {name}
                 </button>
@@ -386,7 +383,7 @@ const Calendar = ({
               </svg>
             </button>
           </div>
-          <div 
+          <div
             className="grid grid-cols-4"
             style={{ gap: gridGap }}
           >
@@ -398,11 +395,10 @@ const Calendar = ({
                     key={year}
                     type="button"
                     onClick={() => setYear(year)}
-                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                      isCurrent
+                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${isCurrent
                         ? `${resolvedTheme.selectedBg} text-white`
                         : `${resolvedTheme.normalText} ${resolvedTheme.normalHoverBg}`
-                    }`}
+                      }`}
                   >
                     {year}
                   </button>
@@ -414,7 +410,7 @@ const Calendar = ({
       )}
 
       {/* Week days - Updated with consistent gap */}
-      <div 
+      <div
         className="grid grid-cols-7 mb-2"
         style={{ gap: gridGap }}
       >
@@ -429,16 +425,16 @@ const Calendar = ({
       </div>
 
       {/* Grid - Updated with custom gap and cell sizing */}
-      <div 
+      <div
         className="grid grid-cols-7 place-items-center"
         style={{ gap: gridGap }}
       >
         {days.map((day, i) => {
           if (!day) return (
-            <div 
-              key={i} 
+            <div
+              key={i}
               style={cellStyle}
-              className={customSize ? "" : presetCellSize} 
+              className={customSize ? "" : presetCellSize}
             />
           );
 
@@ -447,7 +443,7 @@ const Calendar = ({
             mode === "single"
               ? sameDay(day, selectedDate)
               : (selectedRange.start && sameDay(day, selectedRange.start)) ||
-                (selectedRange.end && sameDay(day, selectedRange.end));
+              (selectedRange.end && sameDay(day, selectedRange.end));
 
           const isInRange =
             mode === "range" &&
@@ -466,16 +462,15 @@ const Calendar = ({
                 inline-flex items-center justify-center font-medium transition-all
                 ${customSize ? "" : presetCellSize}
                 ${resolvedTheme.borderRadius}
-                ${
-                  disabled
-                    ? `${resolvedTheme.disabledBg} ${resolvedTheme.disabledText} cursor-not-allowed`
-                    : isSelected
+                ${disabled
+                  ? `${resolvedTheme.disabledBg} ${resolvedTheme.disabledText} cursor-not-allowed`
+                  : isSelected
                     ? `${resolvedTheme.selectedBg} ${resolvedTheme.selectedText} scale-105 shadow-lg`
                     : isToday(day) && highlightToday
-                    ? `${resolvedTheme.todayBg} ${resolvedTheme.todayText}`
-                    : isInRange
-                    ? "bg-blue-50 text-blue-600"
-                    : `${resolvedTheme.normalText} ${resolvedTheme.normalHoverBg} hover:scale-105`
+                      ? `${resolvedTheme.todayBg} ${resolvedTheme.todayText}`
+                      : isInRange
+                        ? "bg-blue-50 text-blue-600"
+                        : `${resolvedTheme.normalText} ${resolvedTheme.normalHoverBg} hover:scale-105`
                 }
               `}
             >
@@ -494,7 +489,7 @@ const Calendar = ({
           </div>
           {highlightToday && (
             <div className="flex items-center">
-              <div  className={`w-4 h-4 rounded mr-2 ${resolvedTheme.todayBg}`}></div>
+              <div className={`w-4 h-4 rounded mr-2 ${resolvedTheme.todayBg}`}></div>
               <span className={resolvedTheme.normalText}>Today</span>
             </div>
           )}
