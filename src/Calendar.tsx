@@ -22,6 +22,13 @@ export interface CalendarProps {
   disableFutureDates?: boolean;
   disableWeekends?: boolean;
   disableMonthNav?: boolean;
+  // Custom disabled weekdays
+  weekdayOFF?: number[];
+  weekdayOFFColor?: {
+    bg?: string;
+    text?: string;
+    hoverBg?: string;
+  };
 
   // User callback for disabling dates
   isDateDisabled?: (date: Date) => boolean;
@@ -62,35 +69,6 @@ export interface CalendarProps {
 
     borderRadius?: string;
 
-    // Weekend-specific colors
-    sundayBg?: string;
-    sundayText?: string;
-    sundayHoverBg?: string;
-
-    saturdayBg?: string;
-    saturdayText?: string;
-    saturdayHoverBg?: string;
-
-    fridayBg?: string;
-    fridayText?: string;
-    fridayHoverBg?: string;
-
-    thursdayBg?: string;
-    thursdayText?: string;
-    thursdayHoverBg?: string;
-
-    wednesdayBg?: string;
-    wednesdayText?: string;
-    wednesdayHoverBg?: string;
-
-    tuesdayBg?: string;
-    tuesdayText?: string;
-    tuesdayHoverBg?: string;
-
-    mondayBg?: string;
-    mondayText?: string;
-    mondayHoverBg?: string;
-    
   };
 
   // Size
@@ -121,6 +99,12 @@ const Calendar = ({
   disableFutureDates = false,
   disableWeekends = false,
   disableMonthNav = false,
+  weekdayOFF = [],
+  weekdayOFFColor = {
+    bg: "bg-gray-100",
+    text: "text-gray-500",
+    hoverBg: "hover:bg-gray-200",
+  },
 
   isDateDisabled,
 
@@ -185,6 +169,22 @@ const Calendar = ({
     : undefined;
 
   const gridGap = customSize?.gap ?? 8;
+
+  // Merge holiday color prop with defaults so partial overrides work.
+  const mergedHolidayColor = {
+    bg: "bg-red-100",
+    text: "text-red-700",
+    hoverBg: "hover:bg-red-200",
+    ...holidayColor,
+  };
+  const mergedWeekdayOffColor = {
+    bg: "bg-gray-100",
+    text: "text-gray-500",
+    hoverBg: "hover:bg-gray-200",
+    ...weekdayOFFColor,
+  };
+  // Normalize weekdayOFF into a Set for fast/multiple lookups
+  const weekdayOFFSet = new Set<number>(weekdayOFF ?? []);
 
   // Helpers
   const sameDay = (d1: Date | null, d2: Date | null) => {
@@ -393,8 +393,8 @@ const Calendar = ({
                   type="button"
                   onClick={() => setMonth(index)}
                   className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${isCurrent
-                      ? `${resolvedTheme.selectedBg} text-white`
-                      : `${resolvedTheme.normalText} ${resolvedTheme.normalHoverBg}`
+                    ? `${resolvedTheme.selectedBg} text-white`
+                    : `${resolvedTheme.normalText} ${resolvedTheme.normalHoverBg}`
                     }`}
                 >
                   {name}
@@ -445,8 +445,8 @@ const Calendar = ({
                     type="button"
                     onClick={() => setYear(year)}
                     className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${isCurrent
-                        ? `${resolvedTheme.selectedBg} text-white`
-                        : `${resolvedTheme.normalText} ${resolvedTheme.normalHoverBg}`
+                      ? `${resolvedTheme.selectedBg} text-white`
+                      : `${resolvedTheme.normalText} ${resolvedTheme.normalHoverBg}`
                       }`}
                   >
                     {year}
@@ -463,46 +463,14 @@ const Calendar = ({
         className="grid grid-cols-7 mb-2"
         style={{ gap: gridGap }}
       >
-        {locale.weekDays!.map((d, index) => {
-          // Calculate the actual day of week based on weekStartsOn
-          const dayOfWeek = (index + weekStartsOn) % 7;
-          const isSunday = dayOfWeek === 0;
-          const isSaturday = dayOfWeek === 6;
-          const isMonday = dayOfWeek === 1;
-          const isTuesday = dayOfWeek === 2;
-          const isWednesday = dayOfWeek === 3;
-          const isThursday = dayOfWeek === 4;
-          const isFriday = dayOfWeek === 5;
-          
-          // Determine text color based on custom weekend colors
-          let textColor = "text-gray-600";
-          if (isSunday && resolvedTheme.sundayText) {
-            textColor = resolvedTheme.sundayText;
-          } else if (isSaturday && resolvedTheme.saturdayText) {
-            textColor = resolvedTheme.saturdayText;
-          } else if (isFriday && resolvedTheme.fridayText) {
-            textColor = resolvedTheme.fridayText;
-          } else if (isThursday && resolvedTheme.thursdayText ) {
-            textColor = resolvedTheme.thursdayText;
-          } else if (isWednesday && resolvedTheme.wednesdayText) {
-            textColor = resolvedTheme.wednesdayText;
-          } else if (isTuesday && resolvedTheme.tuesdayText) {
-            textColor = resolvedTheme.tuesdayText;
-          } else if (isMonday && resolvedTheme.mondayText) {
-            textColor = resolvedTheme.mondayText;
-          }
-
-
-          
-          return (
-            <div
-              key={d}
-              className={`text-center font-semibold ${textColor} text-sm py-2`}
-            >
-              {d}
-            </div>
-          );
-        })}
+        {locale.weekDays!.map((d) => (
+          <div
+            key={d}
+            className="text-center font-semibold text-gray-600 text-sm py-2"
+          >
+            {d}
+          </div>
+        ))}
       </div>
 
       {/* Grid - Updated with custom gap and cell sizing */}
@@ -531,48 +499,27 @@ const Calendar = ({
             selectedRange.start &&
             selectedRange.end &&
             dateIsAfter(day, selectedRange.start) &&
-            dateIsBefore(day, selectedRange.end);
+            dateIsBefore (day, selectedRange.end);
 
-          const dayOfWeek = day.getDay();
-          const isSunday = dayOfWeek === 0;
-          const isSaturday = dayOfWeek === 6;
-          const isMonday = dayOfWeek === 1;
-          const isTuesday = dayOfWeek === 2;
-          const isWednesday = dayOfWeek === 3;
-          const isThursday = dayOfWeek === 4;
-          const isFriday = dayOfWeek === 5;
           const isHolidayDate = isHoliday(day);
+          const isWeekdayOff = weekdayOFFSet.has(day.getDay());
 
-          // Determine base styles based on day type
+          // Determine base styles
           let baseStyles = "";
-          if (disabled) {
-            baseStyles = `${resolvedTheme.disabledBg} ${resolvedTheme.disabledText} cursor-not-allowed`;
-          } else if (isSelected) {
+
+          if (isSelected) {
             baseStyles = `${resolvedTheme.selectedBg} ${resolvedTheme.selectedText} scale-105 shadow-lg`;
-          } else if (isHolidayDate) {
-            baseStyles = `${holidayColor.bg} ${holidayColor.text} ${holidayColor.hoverBg}`;
+          } else if (disabled) {
+            baseStyles = `${resolvedTheme.disabledBg} ${resolvedTheme.disabledText} cursor-not-allowed`;
           } else if (isToday(day) && highlightToday) {
             baseStyles = `${resolvedTheme.todayBg} ${resolvedTheme.todayText}`;
           } else if (isInRange) {
             baseStyles = "bg-blue-50 text-blue-600";
-          } else if (isSunday && resolvedTheme.sundayBg) {
-            baseStyles = `${resolvedTheme.sundayBg} ${resolvedTheme.sundayText || resolvedTheme.normalText} ${resolvedTheme.sundayHoverBg || resolvedTheme.normalHoverBg} hover:scale-105`;
-          } else if (isSaturday && resolvedTheme.saturdayBg) {
-            baseStyles = `${resolvedTheme.saturdayBg} ${resolvedTheme.saturdayText || resolvedTheme.normalText} ${resolvedTheme.saturdayHoverBg || resolvedTheme.normalHoverBg} hover:scale-105`;
-          } else if (isFriday && resolvedTheme.fridayBg) {
-            baseStyles = `${resolvedTheme.fridayBg} ${resolvedTheme.fridayText || resolvedTheme.normalText} ${resolvedTheme.fridayHoverBg || resolvedTheme.normalHoverBg} hover:scale-105`;
-          } else if (isMonday && resolvedTheme.mondayBg) {
-            baseStyles = `${resolvedTheme.normalText} ${resolvedTheme.normalHoverBg} hover:scale-105`;
-          }
-            else if (isTuesday && resolvedTheme.tuesdayBg) {
-            baseStyles = `${resolvedTheme.tuesdayBg} ${resolvedTheme.tuesdayText || resolvedTheme.normalText} ${resolvedTheme.tuesdayHoverBg || resolvedTheme.normalHoverBg} hover:scale-105`;
-          } else if (isWednesday && resolvedTheme.wednesdayBg) {
-
-            baseStyles = `${resolvedTheme.wednesdayBg} ${resolvedTheme.wednesdayText || resolvedTheme.normalText} ${resolvedTheme.wednesdayHoverBg || resolvedTheme.normalHoverBg} hover:scale-105`;
-          } else if (isThursday && resolvedTheme.thursdayBg) {
-            baseStyles = `${resolvedTheme.thursdayBg} ${resolvedTheme.thursdayText || resolvedTheme.normalText} ${resolvedTheme.thursdayHoverBg || resolvedTheme.normalHoverBg} hover:scale-105`;
-          }
-            else {
+          } else if (isWeekdayOff) {
+            baseStyles = `${mergedWeekdayOffColor.bg} ${mergedWeekdayOffColor.text} ${mergedWeekdayOffColor.hoverBg || ""}`;
+          } else if (isHolidayDate) {
+            baseStyles = `${mergedHolidayColor.bg} ${mergedHolidayColor.text} ${mergedHolidayColor.hoverBg || ""}`;
+          } else {
             baseStyles = `${resolvedTheme.normalText} ${resolvedTheme.normalHoverBg} hover:scale-105`;
           }
 
@@ -608,10 +555,10 @@ const Calendar = ({
               <span className={resolvedTheme.normalText}>Today</span>
             </div>
           )}
-            <div className="flex items-center">
-              <div className={`w-4 h-4 rounded mr-2 ${holidayColor.bg}`}></div>
-              <span className={holidayColor.text}>Holiday</span>
-            </div>
+          <div className="flex items-center">
+            <div className={`w-4 h-4 rounded mr-2 ${mergedHolidayColor.bg}`}></div>
+            <span className={mergedHolidayColor.text}>Holiday</span>
+          </div>
         </div>
       )}
 
@@ -626,8 +573,8 @@ const Calendar = ({
             <span className={resolvedTheme.normalText}>In Range</span>
           </div>
           <div className="flex items-center">
-            <div className={`w-4 h-4 rounded mr-2 ${holidayColor.bg}`}></div>
-              <span className={holidayColor.text}>Holiday</span>
+            <div className={`w-4 h-4 rounded mr-2 ${mergedHolidayColor.bg}`}></div>
+            <span className={mergedHolidayColor.text}>Holiday</span>
           </div>
         </div>
       )}

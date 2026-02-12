@@ -10,13 +10,9 @@ A highly customizable, flexible React calendar component with single and range d
 
 - 📅 Single date and date range selection modes
 - 🎨 Fully customizable theme using Tailwind CSS classes
-- 🌈 Day-specific color customization for each weekday
-- 🎭 Pre-built themes: light, dark, metallic, cyberpunk, retro, nature
-- 🎉 Holiday marking with custom colors
-- 📏 Custom sizing support for calendar dimensions
 - 🔒 Disable past/future dates, weekends, or custom dates
 - 🌍 Locale support for weekdays and month names
-- 📱 Responsive sizes (sm, md, lg) or custom dimensions
+- 📱 Responsive sizes (sm, md, lg)
 - ♿ Accessibility-friendly
 - 💪 Written in TypeScript with full type support
 - 🎯 Zero external dependencies (except React and Tailwind CSS)
@@ -73,17 +69,6 @@ function App() {
 }
 ```
 
-### Using Pre-built Themes
-
-```tsx
-<Calendar
-  mode="single"
-  selectedDate={selectedDate}
-  onDateChange={setSelectedDate}
-  themeName="cyberpunk" // Available: light, dark, metallic, cyberpunk, retro, nature
-/>
-```
-
 ### Advanced Configuration
 
 ```tsx
@@ -127,76 +112,6 @@ function App() {
 />
 ```
 
-### Day-Specific Colors
-
-Customize colors for specific weekdays:
-
-```tsx
-<Calendar
-  mode="single"
-  selectedDate={selectedDate}
-  onDateChange={setSelectedDate}
-  theme={{
-    // Sunday styling
-    sundayBg: "bg-red-50",
-    sundayText: "text-red-600",
-    sundayHoverBg: "hover:bg-red-100",
-    
-    // Saturday styling
-    saturdayBg: "bg-blue-50",
-    saturdayText: "text-blue-600",
-    saturdayHoverBg: "hover:bg-blue-100",
-    
-    // Friday styling
-    fridayBg: "bg-green-50",
-    fridayText: "text-green-600",
-    fridayHoverBg: "hover:bg-green-100",
-    
-    // Individual styling for Monday, Tuesday, Wednesday, Thursday also available
-  }}
-/>
-```
-
-### Holiday Marking
-
-Mark specific dates as holidays with custom colors:
-
-```tsx
-<Calendar
-  mode="single"
-  selectedDate={selectedDate}
-  onDateChange={setSelectedDate}
-  holidays={[
-    new Date(2024, 11, 25), // Christmas
-    new Date(2024, 0, 1),   // New Year
-    new Date(2024, 7, 15),   // Independence Day
-    new Date(2024, 2, 15),   // Singles Awareness Day
-  ]}
-  holidayColor={{
-    bg: "bg-red-100",
-    text: "text-red-700",
-    hoverBg: "hover:bg-red-200",
-  }}
-/>
-```
-
-### Custom Sizing
-
-Override default size presets with custom dimensions:
-
-```tsx
-<Calendar
-  mode="single"
-  selectedDate={selectedDate}
-  onDateChange={setSelectedDate}
-  customSize={{
-    box: 400,   // Calendar container size in pixels
-    cell: 50,   // Each date cell size in pixels
-    gap: 12,    // Gap between cells in pixels
-  }}
-/>
-```
-
 ## Props
 
 | Prop                 | Type                                               | Default                      | Description                                  |
@@ -215,104 +130,21 @@ Override default size presets with custom dimensions:
 | `isDateDisabled`     | `(date: Date) => boolean`                          | -                            | Custom function to disable specific dates    |
 | `highlightToday`     | `boolean`                                          | `true`                       | Highlight today's date                       |
 | `weekStartsOn`       | `0 \| 1`                                           | `0`                          | Week start day (0=Sunday, 1=Monday)          |
-| `holidays`           | `Date[]`                                           | `[]`                         | Array of dates to mark as holidays           |
-| `holidayColor`       | `object`                                           | See below                    | Custom colors for holiday dates              |
 | `locale`             | `object`                                           | -                            | Custom locale for weekdays and month names   |
 | `theme`              | `object`                                           | -                            | Custom theme configuration                   |
-| `themeName`          | `"light" \| "dark" \| "metallic" \| "cyberpunk" \| "retro" \| "nature"` | `"light"` | Pre-built theme name |
-| `size`               | `"sm" \| "md" \| "lg"`                             | `"md"`                       | Calendar size preset                         |
-### Pre-built Themes
+| `size`               | `"sm" \| "md" \| "lg"`                             | `"md"`                       | Calendar size                                |
 
-The calendar comes with 6 pre-built themes that you can use with the `themeName` prop:
-
-- **light**: Clean, minimal light theme (default)
-- **dark**: Dark mode with high contrast
-- **metallic**: Sleek metallic silver look
-- **cyberpunk**: Neon-inspired futuristic design
-- **retro**: Vintage 80s aesthetic
-- **nature**: Earth-toned, natural palette
-
-### Custom Theme Object
+## Theme Customization
 
 The `theme` prop accepts an object with the following Tailwind CSS class strings:
 
 ```typescript
 {
-  // Container
-  containerBg?: string;       // Calendar container background
-  containerBorder?: string;   // Calendar container border
-
-  // Selection states
   selectedBg?: string;        // Background for selected dates
   selectedText?: string;      // Text color for selected dates
   todayBg?: string;          // Background for today
   todayText?: string;        // Text color for today
-  
-  // Normal dates
   normalText?: string;       // Text color for normal dates
-  normalHoverBg?: string;    // Hover background for normal dates
-  
-  // Disabled dates
-  disabledBg?: string;       // Background for disabled dates
-  disabledText?: string;     // Text color for disabled dates
-  
-  // Styling
-  borderRadius?: string;     // Border radius for date cells
-  
-  // Day-specific colors
-  sundayBg?: string;         // Background for Sundays
-  sundayText?: string;       // Text color for Sundays
-  sundayHoverBg?: string;    // Hover background for Sundays
-  
-  saturdayBg?: string;       // Background for Saturdays
-  saturdayText?: string;     // Text color for Saturdays
-  saturdayHoverBg?: string;  // Hover background for Saturdays
-  
-  fridayBg?: string;         // Background for Fridays
-  fridayText?: string;       // Text color for Fridays
-  fridayHoverBg?: string;    // Hover background for Fridays
-  
-  thursdayBg?: string;       // Background for Thursdays
-  thursdayText?: string;     // Text color for Thursdays
-  thursdayHoverBg?: string;  // Hover background for Thursdays
-  
-  wednesdayBg?: string;      // Background for Wednesdays
-  wednesdayText?: string;    // Text color for Wednesdays
-  wednesdayHoverBg?: string; // Hover background for Wednesdays
-  
-  tuesdayBg?: string;        // Background for Tuesdays
-  tuesdayText?: string;      // Text color for Tuesdays
-  tuesdayHoverBg?: string;   // Hover background for Tuesdays
-  
-  mondayBg?: string;         // Background for Mondays
-  mondayText?: string;       // Text color for Mondays
-  mondayHoverBg?: string;    // Hover background for Mondays
-}
-```
-
-### Holiday Color Configuration
-
-The `holidayColor` prop accepts:
-
-```typescript
-{
-  bg?: string;        // Background color for holiday dates
-  text?: string;      // Text color for holiday dates
-  hoverBg?: string;   // Hover background for holiday dates
-}
-```
-
-Default: `{ bg: "bg-red-100", text: "text-red-700", hoverBg: "hover:bg-red-200" }`
-
-### Custom Size Configuration
-
-The `customSize` prop accepts:
-
-```typescript
-{
-  box?: number;   // Calendar container width/height in pixels
-  cell?: number;  // Each date cell width/height in pixels
-  gap?: number;   // Gap between cells in pixes
   normalHoverBg?: string;    // Hover background for normal dates
   disabledBg?: string;       // Background for disabled dates
   disabledText?: string;     // Text color for disabled dates
