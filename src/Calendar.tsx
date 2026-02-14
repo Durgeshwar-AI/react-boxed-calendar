@@ -2,22 +2,13 @@ import { useState } from "react";
 import { themes } from "./themes";
 
 export interface CalendarProps {
-  // Modes
   mode?: "single" | "range";
-
-  // Single date selection
   selectedDate?: Date | null;
   onDateChange?: (date: Date) => void;
-
-  // Range selection
   selectedRange?: { start: Date | null; end: Date | null };
   onRangeChange?: (start: Date | null, end: Date | null) => void;
-
-  // Date limits
   minDate?: Date;
   maxDate?: Date;
-
-  // Behavior toggles
   disablePastDates?: boolean;
   disableFutureDates?: boolean;
   disableWeekends?: boolean;
@@ -32,7 +23,6 @@ export interface CalendarProps {
 
   // User callback for disabling dates
   isDateDisabled?: (date: Date) => boolean;
-
   highlightToday?: boolean;
   weekStartsOn?: 0 | 1; // 0 = Sunday, 1 = Monday
 
@@ -84,17 +74,44 @@ export interface CalendarProps {
   };
 }
 
+const DEFAULT_THEME: Required<CalendarTheme> = {
+  selectedBg: "bg-blue-600",
+  selectedText: "text-white",
+  todayBg: "bg-blue-100",
+  todayText: "text-blue-700",
+  normalText: "text-gray-700",
+  normalHoverBg: "hover:bg-gray-100",
+  disabledBg: "bg-gray-50",
+  disabledText: "text-gray-300",
+  borderRadius: "rounded-xl",
+};
+
+const DEFAULT_LOCALE: Required<CalendarLocale> = {
+  weekDays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  monthNames: [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ],
+};
+
 const Calendar = ({
   mode = "single",
   selectedDate = null,
   onDateChange,
-
   selectedRange = { start: null, end: null },
   onRangeChange,
-
   minDate,
   maxDate,
-
   disablePastDates = false,
   disableFutureDates = false,
   disableWeekends = false,
@@ -107,7 +124,6 @@ const Calendar = ({
   },
 
   isDateDisabled,
-
   highlightToday = true,
   weekStartsOn = 0,
 
@@ -210,81 +226,78 @@ const Calendar = ({
     return dateA.getTime() < dateB.getTime();
   };
 
-  const dateIsAfter = (a: Date, b: Date) => {
-    const dateA = new Date(a);
-    const dateB = new Date(b);
-    dateA.setHours(0, 0, 0, 0);
-    dateB.setHours(0, 0, 0, 0);
-    return dateA.getTime() > dateB.getTime();
-  };
+  const [currentMonth, setCurrentMonth] = useState<Date>(
+    selectedDate ?? new Date()
+  );
 
-  const shouldDisable = (date: Date) => {
-    if (disablePastDates) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const checkDate = new Date(date);
-      checkDate.setHours(0, 0, 0, 0);
-      if (checkDate < today) return true;
+  // Sync currentMonth if selectedDate changes drastically?
+  // Maybe better to leave it controlled by user navigation unless initial load.
+  // Actually, if selectedDate changes from outside (e.g. from null to a date), we probably want to jump to it.
+  useEffect(() => {
+    if (selectedDate && !isSameDay(selectedDate, currentMonth)) {
+       // Only update if the month is different? No, currentMonth is confusingly named, it stores a Date object representing the view.
+       // If selectedDate is in a different month, switch to it.
+       if (selectedDate.getMonth() !== currentMonth.getMonth() || selectedDate.getFullYear() !== currentMonth.getFullYear()) {
+         setCurrentMonth(new Date(selectedDate));
+       }
     }
+  }, [selectedDate]); // Watch selectedDate
 
-    if (minDate && dateIsBefore(date, minDate)) return true;
+  const [activePanel, setActivePanel] = useState<"month" | "year" | null>(null);
+  const [yearPageStart, setYearPageStart] = useState<number>(
+    currentMonth.getFullYear() - 6
+  );
 
-    if (disableFutureDates) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const checkDate = new Date(date);
-      checkDate.setHours(0, 0, 0, 0);
-      if (checkDate > today) return true;
+  const cellSize = useMemo(() => {
+    switch (size) {
+      case "sm": return "w-8 h-8 text-xs";
+      case "lg": return "w-14 h-14 text-lg";
+      default: return "w-10 h-10 text-sm";
     }
+  }, [size]);
 
-    if (maxDate && dateIsAfter(date, maxDate)) return true;
+  const days = useMemo(() => {
+    return generateMonthGrid(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
+      weekStartsOn
+    );
+  }, [currentMonth, weekStartsOn]);
 
-    if (disableWeekends && (date.getDay() === 0 || date.getDay() === 6))
-      return true;
-
+  const shouldDisable = useCallback((date: Date) => {
+    if (disablePastDates && isDateBefore(date, new Date())) return true;
+    if (disableFutureDates && isDateAfter(date, new Date())) return true;
+    if (minDate && isDateBefore(date, minDate)) return true;
+    if (maxDate && isDateAfter(date, maxDate)) return true;
+    if (disableWeekends && (date.getDay() === 0 || date.getDay() === 6)) return true;
     if (isDateDisabled && isDateDisabled(date)) return true;
-
     return false;
-  };
+  }, [disablePastDates, disableFutureDates, minDate, maxDate, disableWeekends, isDateDisabled]);
 
-  const handleSelect = (date: Date) => {
+  const handleSelect = useCallback((date: Date) => {
     if (shouldDisable(date)) return;
 
     if (mode === "single" && onDateChange) {
       onDateChange(date);
-    }
-
-    if (mode === "range" && onRangeChange) {
+    } else if (mode === "range" && onRangeChange) {
       const { start, end } = selectedRange;
-
       if (!start || (start && end)) {
         onRangeChange(date, null);
       } else if (start && !end) {
-        if (dateIsBefore(date, start)) {
+        if (isDateBefore(date, start)) {
           onRangeChange(date, start);
         } else {
           onRangeChange(start, date);
         }
       }
     }
-  };
+  }, [mode, onDateChange, onRangeChange, selectedRange, shouldDisable]);
 
   const changeMonth = (offset: number) => {
     const newMonth = new Date(currentMonth);
     newMonth.setMonth(newMonth.getMonth() + offset);
     setCurrentMonth(newMonth);
     setActivePanel(null);
-  };
-
-  const toggleMonthPanel = () => {
-    if (disableMonthNav) return;
-    setActivePanel((prev) => (prev === "month" ? null : "month"));
-  };
-
-  const toggleYearPanel = () => {
-    if (disableMonthNav) return;
-    setYearPageStart(currentMonth.getFullYear() - 6);
-    setActivePanel((prev) => (prev === "year" ? null : "year"));
   };
 
   const setMonth = (monthIndex: number) => {
@@ -300,25 +313,6 @@ const Calendar = ({
     setCurrentMonth(next);
     setActivePanel(null);
   };
-
-  // Generate days
-  const getDays = () => {
-    const y = currentMonth.getFullYear();
-    const m = currentMonth.getMonth();
-
-    const first = new Date(y, m, 1);
-    const last = new Date(y, m + 1, 0);
-
-    const startOffset = (first.getDay() - weekStartsOn + 7) % 7;
-    const days: (Date | null)[] = [];
-
-    for (let i = 0; i < startOffset; i++) days.push(null);
-    for (let d = 1; d <= last.getDate(); d++) days.push(new Date(y, m, d));
-
-    return days;
-  };
-
-  const days = getDays();
 
   return (
     <div className={`
@@ -346,7 +340,7 @@ const Calendar = ({
           </button>
         )}
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mx-auto">
           <button
             type="button"
             onClick={toggleMonthPanel}
@@ -465,8 +459,9 @@ const Calendar = ({
       >
         {locale.weekDays!.map((d) => (
           <div
-            key={d}
+            key={`weekday-${i}`}
             className="text-center font-semibold text-gray-600 text-sm py-2"
+            aria-label={d}
           >
             {d}
           </div>
@@ -498,8 +493,13 @@ const Calendar = ({
             mode === "range" &&
             selectedRange.start &&
             selectedRange.end &&
-            dateIsAfter(day, selectedRange.start) &&
-            dateIsBefore(day, selectedRange.end);
+            isDateAfter(day, selectedRange.start) &&
+            isDateBefore(day, selectedRange.end);
+
+          const isTodayDate = isToday(day);
+          const isCurrentMonth =
+            day.getMonth() === currentMonth.getMonth() &&
+            day.getFullYear() === currentMonth.getFullYear();
 
           const isHolidayDate = isHoliday(day);
           const isWeekdayOff = weekdayOFFSet.has(day.getDay());
@@ -540,7 +540,7 @@ const Calendar = ({
 
       {/* Legend */}
       {mode === "single" && (
-        <div className="mt-6 flex items-center justify-center space-x-4 text-sm">
+        <div className="mt-6 flex items-center justify-center space-x-6 text-sm">
           <div className="flex items-center">
             <div className={`w-4 h-4 rounded mr-2 ${resolvedTheme.selectedBg}`}></div>
             <span className={resolvedTheme.normalText}>Selected</span>
@@ -559,7 +559,7 @@ const Calendar = ({
       )}
 
       {mode === "range" && (
-        <div className="mt-6 flex items-center justify-center space-x-4 text-sm">
+        <div className="mt-6 flex items-center justify-center space-x-6 text-sm">
           <div className="flex items-center">
             <div className={`w-4 h-4 rounded mr-2 ${resolvedTheme.selectedBg}`}></div>
             <span className={resolvedTheme.normalText}>Selected</span>

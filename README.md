@@ -6,6 +6,11 @@ A highly customizable, flexible React calendar component with single and range d
 ![npm downloads](https://img.shields.io/npm/dm/react-boxed-calendar)
 ![license](https://img.shields.io/npm/l/react-boxed-calendar)
 
+## 🌐 Live Demo
+
+Try it here:
+👉 https://react-boxed-calendar-demo.vercel.app
+
 ## Features
 
 - 📅 Single date and date range selection modes
