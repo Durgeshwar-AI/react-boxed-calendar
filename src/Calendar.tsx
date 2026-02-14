@@ -1,227 +1,181 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import {
+  generateMonthGrid,
+  isDateAfter,
+  isDateBefore,
+  isSameDay,
+  isToday,
+} from "./utils";
+
+export interface CalendarTheme {
+  selectedBg?: string;
+  selectedText?: string;
+  todayBg?: string;
+  todayText?: string;
+  normalText?: string;
+  normalHoverBg?: string;
+  disabledBg?: string;
+  disabledText?: string;
+  borderRadius?: string;
+}
+
+export interface CalendarLocale {
+  weekDays?: string[];
+  monthNames?: string[];
+}
 
 export interface CalendarProps {
-  // Modes
   mode?: "single" | "range";
-
-  // Single date selection
   selectedDate?: Date | null;
   onDateChange?: (date: Date) => void;
-
-  // Range selection
   selectedRange?: { start: Date | null; end: Date | null };
   onRangeChange?: (start: Date | null, end: Date | null) => void;
-
-  // Date limits
   minDate?: Date;
   maxDate?: Date;
-
-  // Behavior toggles
   disablePastDates?: boolean;
   disableFutureDates?: boolean;
   disableWeekends?: boolean;
   disableMonthNav?: boolean;
-
-  // User callback for disabling dates
   isDateDisabled?: (date: Date) => boolean;
-
   highlightToday?: boolean;
-  weekStartsOn?: 0 | 1; // 0 = Sunday, 1 = Monday
-
-  // Localization
-  locale?: {
-    weekDays?: [string, string, string, string, string, string, string];
-    monthNames?: [string, string, string, string, string, string, string, string, string, string, string, string];
-  };
-
-  // Theme
-  theme?: {
-    selectedBg?: string;
-    selectedText?: string;
-
-    todayBg?: string;
-    todayText?: string;
-
-    normalText?: string;
-    normalHoverBg?: string;
-
-    disabledBg?: string;
-    disabledText?: string;
-
-    borderRadius?: string;
-  };
-
-  // Size
+  weekStartsOn?: 0 | 1;
+  locale?: CalendarLocale;
+  theme?: CalendarTheme;
   size?: "sm" | "md" | "lg";
 }
+
+const DEFAULT_THEME: Required<CalendarTheme> = {
+  selectedBg: "bg-blue-600",
+  selectedText: "text-white",
+  todayBg: "bg-blue-100",
+  todayText: "text-blue-700",
+  normalText: "text-gray-700",
+  normalHoverBg: "hover:bg-gray-100",
+  disabledBg: "bg-gray-50",
+  disabledText: "text-gray-300",
+  borderRadius: "rounded-xl",
+};
+
+const DEFAULT_LOCALE: Required<CalendarLocale> = {
+  weekDays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  monthNames: [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ],
+};
 
 const Calendar = ({
   mode = "single",
   selectedDate = null,
   onDateChange,
-
   selectedRange = { start: null, end: null },
   onRangeChange,
-
   minDate,
   maxDate,
-
   disablePastDates = false,
   disableFutureDates = false,
   disableWeekends = false,
   disableMonthNav = false,
-
   isDateDisabled,
-
   highlightToday = true,
   weekStartsOn = 0,
-
-  locale = {
-    weekDays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-    monthNames: [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ],
-  },
-
-  theme = {
-    selectedBg: "bg-blue-600",
-    selectedText: "text-white",
-
-    todayBg: "bg-blue-100",
-    todayText: "text-blue-700",
-
-    normalText: "text-gray-700",
-    normalHoverBg: "hover:bg-gray-100",
-
-    disabledBg: "bg-gray-50",
-    disabledText: "text-gray-300",
-
-    borderRadius: "rounded-xl",
-  },
-
+  locale: userLocale,
+  theme: userTheme,
   size = "md",
 }: CalendarProps) => {
+  // Merge props with defaults
+  const theme = useMemo(
+    () => ({ ...DEFAULT_THEME, ...userTheme }),
+    [userTheme]
+  );
+
+  const locale = useMemo(
+    () => ({ ...DEFAULT_LOCALE, ...userLocale }),
+    [userLocale]
+  );
+
   const [currentMonth, setCurrentMonth] = useState<Date>(
     selectedDate ?? new Date()
   );
+
+  // Sync currentMonth if selectedDate changes drastically?
+  // Maybe better to leave it controlled by user navigation unless initial load.
+  // Actually, if selectedDate changes from outside (e.g. from null to a date), we probably want to jump to it.
+  useEffect(() => {
+    if (selectedDate && !isSameDay(selectedDate, currentMonth)) {
+       // Only update if the month is different? No, currentMonth is confusingly named, it stores a Date object representing the view.
+       // If selectedDate is in a different month, switch to it.
+       if (selectedDate.getMonth() !== currentMonth.getMonth() || selectedDate.getFullYear() !== currentMonth.getFullYear()) {
+         setCurrentMonth(new Date(selectedDate));
+       }
+    }
+  }, [selectedDate]); // Watch selectedDate
+
   const [activePanel, setActivePanel] = useState<"month" | "year" | null>(null);
   const [yearPageStart, setYearPageStart] = useState<number>(
-    (selectedDate ?? new Date()).getFullYear() - 6
+    currentMonth.getFullYear() - 6
   );
 
-  const cellSize =
-    size === "sm"
-      ? "w-8 h-8 text-xs"
-      : size === "lg"
-      ? "w-14 h-14 text-lg"
-      : "w-10 h-10 text-sm"; // md default
+  const cellSize = useMemo(() => {
+    switch (size) {
+      case "sm": return "w-8 h-8 text-xs";
+      case "lg": return "w-14 h-14 text-lg";
+      default: return "w-10 h-10 text-sm";
+    }
+  }, [size]);
 
-  // Helpers
-  const sameDay = (d1: Date | null, d2: Date | null) => {
-    if (!d1 || !d2) return false;
-    return (
-      d1.getDate() === d2.getDate() &&
-      d1.getMonth() === d2.getMonth() &&
-      d1.getFullYear() === d2.getFullYear()
+  const days = useMemo(() => {
+    return generateMonthGrid(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
+      weekStartsOn
     );
-  };
+  }, [currentMonth, weekStartsOn]);
 
-  const isToday = (date: Date) => sameDay(date, new Date());
-
-  const dateIsBefore = (a: Date, b: Date) => {
-    const dateA = new Date(a);
-    const dateB = new Date(b);
-    dateA.setHours(0, 0, 0, 0);
-    dateB.setHours(0, 0, 0, 0);
-    return dateA.getTime() < dateB.getTime();
-  };
-
-  const dateIsAfter = (a: Date, b: Date) => {
-    const dateA = new Date(a);
-    const dateB = new Date(b);
-    dateA.setHours(0, 0, 0, 0);
-    dateB.setHours(0, 0, 0, 0);
-    return dateA.getTime() > dateB.getTime();
-  };
-
-  const shouldDisable = (date: Date) => {
-    if (disablePastDates) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const checkDate = new Date(date);
-      checkDate.setHours(0, 0, 0, 0);
-      if (checkDate < today) return true;
-    }
-
-    if (minDate && dateIsBefore(date, minDate)) return true;
-
-    if (disableFutureDates) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const checkDate = new Date(date);
-      checkDate.setHours(0, 0, 0, 0);
-      if (checkDate > today) return true;
-    }
-
-    if (maxDate && dateIsAfter(date, maxDate)) return true;
-
-    if (disableWeekends && (date.getDay() === 0 || date.getDay() === 6))
-      return true;
-
+  const shouldDisable = useCallback((date: Date) => {
+    if (disablePastDates && isDateBefore(date, new Date())) return true;
+    if (disableFutureDates && isDateAfter(date, new Date())) return true;
+    if (minDate && isDateBefore(date, minDate)) return true;
+    if (maxDate && isDateAfter(date, maxDate)) return true;
+    if (disableWeekends && (date.getDay() === 0 || date.getDay() === 6)) return true;
     if (isDateDisabled && isDateDisabled(date)) return true;
-
     return false;
-  };
+  }, [disablePastDates, disableFutureDates, minDate, maxDate, disableWeekends, isDateDisabled]);
 
-  const handleSelect = (date: Date) => {
+  const handleSelect = useCallback((date: Date) => {
     if (shouldDisable(date)) return;
 
     if (mode === "single" && onDateChange) {
       onDateChange(date);
-    }
-
-    if (mode === "range" && onRangeChange) {
+    } else if (mode === "range" && onRangeChange) {
       const { start, end } = selectedRange;
-
       if (!start || (start && end)) {
         onRangeChange(date, null);
       } else if (start && !end) {
-        if (dateIsBefore(date, start)) {
+        if (isDateBefore(date, start)) {
           onRangeChange(date, start);
         } else {
           onRangeChange(start, date);
         }
       }
     }
-  };
+  }, [mode, onDateChange, onRangeChange, selectedRange, shouldDisable]);
 
   const changeMonth = (offset: number) => {
     const newMonth = new Date(currentMonth);
     newMonth.setMonth(newMonth.getMonth() + offset);
     setCurrentMonth(newMonth);
     setActivePanel(null);
-  };
-
-  const toggleMonthPanel = () => {
-    if (disableMonthNav) return;
-    setActivePanel((prev) => (prev === "month" ? null : "month"));
-  };
-
-  const toggleYearPanel = () => {
-    if (disableMonthNav) return;
-    setYearPageStart(currentMonth.getFullYear() - 6);
-    setActivePanel((prev) => (prev === "year" ? null : "year"));
   };
 
   const setMonth = (monthIndex: number) => {
@@ -238,33 +192,14 @@ const Calendar = ({
     setActivePanel(null);
   };
 
-  // Generate days
-  const getDays = () => {
-    const y = currentMonth.getFullYear();
-    const m = currentMonth.getMonth();
-
-    const first = new Date(y, m, 1);
-    const last = new Date(y, m + 1, 0);
-
-    const startOffset = (first.getDay() - weekStartsOn + 7) % 7;
-    const days: (Date | null)[] = [];
-
-    for (let i = 0; i < startOffset; i++) days.push(null);
-    for (let d = 1; d <= last.getDate(); d++) days.push(new Date(y, m, d));
-
-    return days;
-  };
-
-  const days = getDays();
-
   return (
-    <div className="p-6 bg-white rounded-2xl shadow-lg border border-gray-100">
+    <div className="p-6 bg-white rounded-2xl shadow-lg border border-gray-100 select-none">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         {!disableMonthNav && (
           <button
             onClick={() => changeMonth(-1)}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label="Previous month"
           >
             <svg className="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -273,25 +208,27 @@ const Calendar = ({
           </button>
         )}
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mx-auto">
           <button
             type="button"
-            onClick={toggleMonthPanel}
+            onClick={() => !disableMonthNav && setActivePanel(activePanel === "month" ? null : "month")}
             className={`font-bold text-xl text-gray-900 px-2 py-1 rounded-lg transition-colors ${
-              disableMonthNav ? "cursor-default" : "hover:bg-gray-100"
+              disableMonthNav ? "cursor-default" : "hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             }`}
-            aria-label="Select month"
             aria-expanded={activePanel === "month"}
           >
             {locale.monthNames![currentMonth.getMonth()]}
           </button>
           <button
             type="button"
-            onClick={toggleYearPanel}
+            onClick={() => {
+                if (disableMonthNav) return;
+                setYearPageStart(currentMonth.getFullYear() - 6);
+                setActivePanel(activePanel === "year" ? null : "year");
+            }}
             className={`font-bold text-xl text-gray-900 px-2 py-1 rounded-lg transition-colors ${
-              disableMonthNav ? "cursor-default" : "hover:bg-gray-100"
+              disableMonthNav ? "cursor-default" : "hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             }`}
-            aria-label="Select year"
             aria-expanded={activePanel === "year"}
           >
             {currentMonth.getFullYear()}
@@ -301,7 +238,7 @@ const Calendar = ({
         {!disableMonthNav && (
           <button
             onClick={() => changeMonth(1)}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label="Next month"
           >
             <svg className="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -312,7 +249,7 @@ const Calendar = ({
       </div>
 
       {activePanel === "month" && !disableMonthNav && (
-        <div className="mb-4 p-4 bg-white border border-gray-100 rounded-xl shadow-sm">
+        <div className="mb-4 p-4 bg-white border border-gray-100 rounded-xl shadow-sm animate-in fade-in slide-in-from-top-2">
           <div className="grid grid-cols-3 gap-2">
             {locale.monthNames!.map((name, index) => {
               const isCurrent = index === currentMonth.getMonth();
@@ -321,7 +258,7 @@ const Calendar = ({
                   key={name}
                   type="button"
                   onClick={() => setMonth(index)}
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     isCurrent
                       ? "bg-blue-600 text-white"
                       : "text-gray-700 hover:bg-gray-100"
@@ -336,12 +273,12 @@ const Calendar = ({
       )}
 
       {activePanel === "year" && !disableMonthNav && (
-        <div className="mb-4 p-4 bg-white border border-gray-100 rounded-xl shadow-sm">
+        <div className="mb-4 p-4 bg-white border border-gray-100 rounded-xl shadow-sm animate-in fade-in slide-in-from-top-2">
           <div className="flex items-center justify-between mb-3">
             <button
               type="button"
               onClick={() => setYearPageStart((prev) => prev - 12)}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
               aria-label="Previous years"
             >
               <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -354,7 +291,7 @@ const Calendar = ({
             <button
               type="button"
               onClick={() => setYearPageStart((prev) => prev + 12)}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
               aria-label="Next years"
             >
               <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -371,7 +308,7 @@ const Calendar = ({
                     key={year}
                     type="button"
                     onClick={() => setYear(year)}
-                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       isCurrent
                         ? "bg-blue-600 text-white"
                         : "text-gray-700 hover:bg-gray-100"
@@ -388,10 +325,11 @@ const Calendar = ({
 
       {/* Week days */}
       <div className="grid grid-cols-7 gap-2 mb-2">
-        {locale.weekDays!.map((d) => (
+        {locale.weekDays!.map((d, i) => (
           <div
-            key={d}
+            key={`weekday-${i}`}
             className="text-center font-semibold text-gray-600 text-sm py-2"
+            aria-label={d}
           >
             {d}
           </div>
@@ -400,39 +338,48 @@ const Calendar = ({
 
       {/* Grid */}
       <div className="grid grid-cols-7 gap-2 place-items-center">
-        {days.map((day, i) => {
-          if (!day) return <div key={i} className={cellSize} />;
-
+        {days.map((day) => {
           const disabled = shouldDisable(day);
           const isSelected =
             mode === "single"
-              ? sameDay(day, selectedDate)
-              : (selectedRange.start && sameDay(day, selectedRange.start)) ||
-                (selectedRange.end && sameDay(day, selectedRange.end));
+              ? isSameDay(day, selectedDate)
+              : (selectedRange.start && isSameDay(day, selectedRange.start)) ||
+                (selectedRange.end && isSameDay(day, selectedRange.end));
 
           const isInRange =
             mode === "range" &&
             selectedRange.start &&
             selectedRange.end &&
-            dateIsAfter(day, selectedRange.start) &&
-            dateIsBefore(day, selectedRange.end);
+            isDateAfter(day, selectedRange.start) &&
+            isDateBefore(day, selectedRange.end);
+
+          const isTodayDate = isToday(day);
+          const isCurrentMonth =
+            day.getMonth() === currentMonth.getMonth() &&
+            day.getFullYear() === currentMonth.getFullYear();
 
           return (
             <button
               key={day.toISOString()}
               disabled={disabled}
               onClick={() => handleSelect(day)}
+              aria-label={day.toDateString()}
+              aria-selected={!!isSelected}
+              aria-current={isTodayDate ? "date" : undefined}
               className={`
-                inline-flex items-center justify-center font-medium transition-all
+                inline-flex items-center justify-center font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500
                 ${cellSize}
                 ${theme.borderRadius}
                 ${
+                  !isCurrentMonth ? "opacity-40" : ""
+                }
+                ${
                   disabled
-                    ? `${theme.disabledBg} ${theme.disabledText} cursor-not-allowed`
+                    ? `${theme.disabledBg} ${theme.disabledText} cursor-not-allowed opacity-50`
                     : isSelected
-                    ? `${theme.selectedBg} ${theme.selectedText} scale-105 shadow-lg`
-                    : isToday(day) && highlightToday
-                    ? `${theme.todayBg} ${theme.todayText}`
+                    ? `${theme.selectedBg} ${theme.selectedText} scale-105 shadow-md z-10`
+                    : isTodayDate && highlightToday
+                    ? `${theme.todayBg} ${theme.todayText} font-bold ring-1 ring-blue-200`
                     : isInRange
                     ? "bg-blue-50 text-blue-600"
                     : `${theme.normalText} ${theme.normalHoverBg} hover:scale-105`
@@ -447,14 +394,14 @@ const Calendar = ({
 
       {/* Legend */}
       {mode === "single" && (
-        <div className="mt-6 flex items-center justify-center space-x-4 text-sm">
+        <div className="mt-6 flex items-center justify-center space-x-6 text-sm">
           <div className="flex items-center">
-            <div className="w-4 h-4 bg-blue-600 rounded mr-2"></div>
+            <div className={`w-3 h-3 ${theme.selectedBg} rounded-full mr-2`}></div>
             <span className="text-gray-600">Selected</span>
           </div>
           {highlightToday && (
             <div className="flex items-center">
-              <div className="w-4 h-4 bg-blue-100 rounded mr-2"></div>
+              <div className={`w-3 h-3 ${theme.todayBg} rounded-full mr-2 border border-blue-200`}></div>
               <span className="text-gray-600">Today</span>
             </div>
           )}
@@ -462,13 +409,13 @@ const Calendar = ({
       )}
 
       {mode === "range" && (
-        <div className="mt-6 flex items-center justify-center space-x-4 text-sm">
+        <div className="mt-6 flex items-center justify-center space-x-6 text-sm">
           <div className="flex items-center">
-            <div className="w-4 h-4 bg-blue-600 rounded mr-2"></div>
-            <span className="text-gray-600">Selected</span>
+            <div className={`w-3 h-3 ${theme.selectedBg} rounded-full mr-2`}></div>
+            <span className="text-gray-600">Start/End</span>
           </div>
           <div className="flex items-center">
-            <div className="w-4 h-4 bg-blue-50 border border-blue-200 rounded mr-2"></div>
+            <div className="w-3 h-3 bg-blue-50 border border-blue-200 rounded-full mr-2"></div>
             <span className="text-gray-600">In Range</span>
           </div>
         </div>
