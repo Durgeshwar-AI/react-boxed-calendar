@@ -23,8 +23,8 @@ export interface CalendarTheme {
 }
 
 export interface CalendarLocale {
-  weekDays?: string[];
-  monthNames?: string[];
+  weekDays?: [string, string, string, string, string, string, string];
+  monthNames?: [string, string, string, string, string, string, string, string, string, string, string, string];
 }
 
 export interface CalendarProps {
