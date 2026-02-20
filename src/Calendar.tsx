@@ -41,11 +41,13 @@ export interface CalendarLocale {
 }
 
 export interface CalendarProps {
-  mode?: "single" | "range";
+  mode?: "single" | "range" | "multi";
   selectedDate?: Date | null;
   onDateChange?: (date: Date) => void;
   selectedRange?: { start: Date | null; end: Date | null };
   onRangeChange?: (start: Date | null, end: Date | null) => void;
+  selectedDates?: Date[];
+  onDatesChange?: (dates: Date[]) => void;
   minDate?: Date;
   maxDate?: Date;
   disablePastDates?: boolean;
@@ -116,6 +118,8 @@ const Calendar = ({
   onDateChange,
   selectedRange = { start: null, end: null },
   onRangeChange,
+  selectedDates = [],
+  onDatesChange,
   minDate,
   maxDate,
   disablePastDates = false,
@@ -269,6 +273,12 @@ const Calendar = ({
     ],
   );
 
+  // Create Set from selectedDates for O(1) lookup
+  const selectedDatesSet = useMemo(
+    () => new Set(selectedDates.map((d) => d.toISOString())),
+    [selectedDates],
+  );
+
   // Selection handler
   const handleSelect = useCallback(
     (date: Date) => {
@@ -287,9 +297,23 @@ const Calendar = ({
             onRangeChange(start, date);
           }
         }
+      } else if (mode === "multi" && onDatesChange) {
+        const dateKey = date.toISOString();
+        const isAlreadySelected = selectedDatesSet.has(dateKey);
+        
+        if (isAlreadySelected) {
+          // Remove date from selection
+          const newDates = selectedDates.filter(
+            (d) => d.toISOString() !== dateKey
+          );
+          onDatesChange(newDates);
+        } else {
+          // Add date to selection
+          onDatesChange([...selectedDates, date]);
+        }
       }
     },
-    [mode, onDateChange, onRangeChange, selectedRange, shouldDisable],
+    [mode, onDateChange, onRangeChange, selectedRange, shouldDisable, selectedDates, selectedDatesSet, onDatesChange],
   );
 
   // Navigation handlers
@@ -592,6 +616,8 @@ const Calendar = ({
           const isSelected =
             mode === "single"
               ? isSameDay(day, selectedDate)
+              : mode === "multi"
+              ? selectedDatesSet.has(day.toISOString())
               : (selectedRange.start && isSameDay(day, selectedRange.start)) ||
                 (selectedRange.end && isSameDay(day, selectedRange.end));
 
@@ -680,6 +706,27 @@ const Calendar = ({
             <div className="w-4 h-4 bg-blue-50 border border-blue-200 rounded mr-2" />
             <span className={mergedTheme.normalText}>In Range</span>
           </div>
+          <div className="flex items-center">
+            <div className={`w-4 h-4 rounded mr-2 ${mergedHolidayColor.bg}`} />
+            <span className={mergedHolidayColor.text}>Holiday</span>
+          </div>
+        </div>
+      )}
+
+      {mode === "multi" && (
+        <div className="mt-6 flex items-center justify-center space-x-6 text-sm">
+          <div className="flex items-center">
+            <div className={`w-4 h-4 rounded mr-2 ${mergedTheme.selectedBg}`} />
+            <span className={mergedTheme.normalText}>
+              {selectedDates.length} selected
+            </span>
+          </div>
+          {highlightToday && (
+            <div className="flex items-center">
+              <div className={`w-4 h-4 rounded mr-2 ${mergedTheme.todayBg}`} />
+              <span className={mergedTheme.normalText}>Today</span>
+            </div>
+          )}
           <div className="flex items-center">
             <div className={`w-4 h-4 rounded mr-2 ${mergedHolidayColor.bg}`} />
             <span className={mergedHolidayColor.text}>Holiday</span>
