@@ -14,7 +14,8 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.0",
-    "tailwindcss": "^4.1.18"
+    "tailwindcss": "^4.1.18",
+    "react-boxed-calendar": "file:.."
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
