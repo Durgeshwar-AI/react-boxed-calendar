@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { themes } from "./themes";
+import { getMonthTheme } from "./themes/month";
 import {
   generateMonthGrid,
   isDateAfter,
@@ -147,14 +148,23 @@ const Calendar = ({
   size = "md",
   customSize,
 }: CalendarProps) => {
-  // Theme resolution: defaults → preset → user overrides
+  const [currentMonth, setCurrentMonth] = useState<Date>(
+    selectedDate ?? new Date(),
+  );
+  const [activePanel, setActivePanel] = useState<"month" | "year" | null>(null);
+  const [yearPageStart, setYearPageStart] = useState<number>(
+    (selectedDate ?? new Date()).getFullYear() - 6,
+  );
+
+  // Theme resolution: defaults → month theme → preset → user overrides
   const mergedTheme = useMemo(() => {
     return {
       ...DEFAULT_THEME,
+      ...getMonthTheme(currentMonth.getMonth()),
       ...themes[themeName],
       ...userTheme,
     };
-  }, [themeName, userTheme]);
+  }, [currentMonth, themeName, userTheme]);
 
   // Locale resolution: defaults → user overrides
   const mergedLocale = useMemo(() => {
@@ -163,14 +173,6 @@ const Calendar = ({
       ...userLocale,
     };
   }, [userLocale]);
-
-  const [currentMonth, setCurrentMonth] = useState<Date>(
-    selectedDate ?? new Date(),
-  );
-  const [activePanel, setActivePanel] = useState<"month" | "year" | null>(null);
-  const [yearPageStart, setYearPageStart] = useState<number>(
-    (selectedDate ?? new Date()).getFullYear() - 6,
-  );
 
   // Sync view when selectedDate changes externally
   useEffect(() => {
@@ -214,9 +216,9 @@ const Calendar = ({
   // Merge color props with defaults
   const mergedHolidayColor = useMemo(
     () => ({
-      bg: "bg-red-100",
-      text: "text-red-700",
-      hoverBg: "hover:bg-red-200",
+      bg: "bg-white",
+      text: "text-black",
+      hoverBg: "hover:bg-gray-100",
       ...holidayColor,
     }),
     [holidayColor],
@@ -279,11 +281,27 @@ const Calendar = ({
     [selectedDates],
   );
 
-  // Selection handler
+  // Selection handler with automatic month navigation
   const handleSelect = useCallback(
     (date: Date) => {
       if (shouldDisable(date)) return;
 
+      // Auto-navigate to the clicked date's month if it's different from current month
+      const clickedMonth = date.getMonth();
+      const clickedYear = date.getFullYear();
+      const currentDisplayMonth = currentMonth.getMonth();
+      const currentDisplayYear = currentMonth.getFullYear();
+
+      // If the clicked date is from a different month/year, navigate to it
+      if (clickedMonth !== currentDisplayMonth || clickedYear !== currentDisplayYear) {
+        const newMonth = new Date(currentMonth);
+        newMonth.setFullYear(clickedYear);
+        newMonth.setMonth(clickedMonth);
+        setCurrentMonth(newMonth);
+        setActivePanel(null);
+      }
+
+      // Then proceed with date selection
       if (mode === "single" && onDateChange) {
         onDateChange(date);
       } else if (mode === "range" && onRangeChange) {
@@ -313,7 +331,7 @@ const Calendar = ({
         }
       }
     },
-    [mode, onDateChange, onRangeChange, selectedRange, shouldDisable, selectedDates, selectedDatesSet, onDatesChange],
+    [mode, onDateChange, onRangeChange, selectedRange, shouldDisable, selectedDates, selectedDatesSet, onDatesChange, currentMonth],
   );
 
   // Navigation handlers
@@ -670,7 +688,11 @@ const Calendar = ({
                 ${cellStyles}
               `}
             >
-              {day.getDate()}
+              {isHolidayDate ? (
+                <span className="text-red-600">{day.getDate()}</span>
+              ) : (
+                day.getDate()
+              )}
             </button>
           );
         })}
@@ -690,8 +712,8 @@ const Calendar = ({
             </div>
           )}
           <div className="flex items-center">
-            <div className={`w-4 h-4 rounded mr-2 ${mergedHolidayColor.bg}`} />
-            <span className={mergedHolidayColor.text}>Holiday</span>
+            <div className="w-4 h-4 rounded mr-2 bg-red-600" />
+            <span className={mergedTheme.normalText}>Holiday</span>
           </div>
         </div>
       )}
@@ -707,8 +729,8 @@ const Calendar = ({
             <span className={mergedTheme.normalText}>In Range</span>
           </div>
           <div className="flex items-center">
-            <div className={`w-4 h-4 rounded mr-2 ${mergedHolidayColor.bg}`} />
-            <span className={mergedHolidayColor.text}>Holiday</span>
+            <div className="w-4 h-4 rounded mr-2 bg-red-600" />
+            <span className={mergedTheme.normalText}>Holiday</span>
           </div>
         </div>
       )}
@@ -728,8 +750,8 @@ const Calendar = ({
             </div>
           )}
           <div className="flex items-center">
-            <div className={`w-4 h-4 rounded mr-2 ${mergedHolidayColor.bg}`} />
-            <span className={mergedHolidayColor.text}>Holiday</span>
+            <div className="w-4 h-4 rounded mr-2 bg-red-600" />
+            <span className={mergedTheme.normalText}>Holiday</span>
           </div>
         </div>
       )}
