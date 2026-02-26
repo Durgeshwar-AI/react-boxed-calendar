@@ -15,20 +15,24 @@ const CalendarSection = ({
   code,
 }: CalendarSectionProps) => {
   return (
-    <section className="py-16 px-4">
+    <section className="py-12 sm:py-16 px-4">
       <div className="max-w-6xl mx-auto">
-        <h2 className="text-3xl font-bold text-gray-800 mb-3">{title}</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2 sm:mb-3">
+          {title}
+        </h2>
         {description && (
-          <p className="text-gray-600 mb-8 max-w-2xl">{description}</p>
+          <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8 max-w-2xl">
+            {description}
+          </p>
         )}
-        
-        <div className="grid lg:grid-cols-2 gap-8 items-start">
-          <div className="bg-gray-50 rounded-xl p-8 flex items-center justify-center min-h-[400px]">
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+          <div className="bg-gray-50 rounded-xl p-4 sm:p-8 flex items-center justify-center min-h-[300px] sm:min-h-[400px] overflow-auto">
             {children}
           </div>
-          
+
           {code && (
-            <div className="lg:sticky lg:top-8">
+            <div className="w-full">
               <CodeBlock code={code} />
             </div>
           )}
