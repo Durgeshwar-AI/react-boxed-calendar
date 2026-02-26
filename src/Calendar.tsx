@@ -6,6 +6,11 @@ import {
   isDateBefore,
   isSameDay,
   isToday,
+  getToday,
+  getLast7Days,
+  getLast30Days,
+  getThisMonth,
+  getLastMonth,
 } from "./utils";
 
 export interface CalendarTheme {
@@ -39,6 +44,13 @@ export interface CalendarLocale {
     string,
   ];
 }
+
+export interface Preset {
+  label: string;
+  getValue: () => { start: Date; end: Date };
+}
+
+export type CalendarPreset = Preset[];
 
 export interface CalendarProps {
   mode?: "single" | "range" | "multi";
@@ -78,7 +90,19 @@ export interface CalendarProps {
     cell?: number;
     gap?: number;
   };
+  showPresets?: boolean;
+  presets?: CalendarPreset;
+  onPresetSelect?: (preset: Preset) => void;
 }
+
+// Default presets
+const DEFAULT_PRESETS: CalendarPreset = [
+  { label: "Today", getValue: getToday },
+  { label: "Last 7 Days", getValue: getLast7Days },
+  { label: "Last 30 Days", getValue: getLast30Days },
+  { label: "This Month", getValue: getThisMonth },
+  { label: "Last Month", getValue: getLastMonth },
+];
 
 const DEFAULT_THEME: Required<CalendarTheme> = {
   containerBg: "bg-white",
@@ -146,6 +170,9 @@ const Calendar = ({
   themeName = "light",
   size = "md",
   customSize,
+  showPresets = false,
+  presets = DEFAULT_PRESETS,
+  onPresetSelect,
 }: CalendarProps) => {
   // Theme resolution: preset → defaults → user overrides
   const mergedTheme = useMemo(() => {
@@ -352,11 +379,25 @@ const Calendar = ({
     setActivePanel((prev) => (prev === "month" ? null : "month"));
   }, [disableMonthNav]);
 
-  const toggleYearPanel = useCallback(() => {
+const toggleYearPanel = useCallback(() => {
     if (disableMonthNav) return;
     setYearPageStart(currentMonth.getFullYear() - 6);
     setActivePanel((prev) => (prev === "year" ? null : "year"));
   }, [currentMonth, disableMonthNav]);
+
+  // Preset selection handler
+  const handlePresetSelect = useCallback(
+    (preset: Preset) => {
+      const range = preset.getValue();
+      if (onRangeChange) {
+        onRangeChange(range.start, range.end);
+      }
+      if (onPresetSelect) {
+        onPresetSelect(preset);
+      }
+    },
+    [onRangeChange, onPresetSelect],
+  );
 
   return (
     <div
@@ -372,7 +413,7 @@ const Calendar = ({
           : undefined
       }
     >
-      {/* Header */}
+{/* Header */}
       <div className="flex items-center justify-between mb-6">
         {!disableMonthNav && (
           <button
@@ -457,6 +498,26 @@ const Calendar = ({
           </button>
         )}
       </div>
+
+      {/* Presets */}
+      {showPresets && mode === "range" && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {presets.map((preset, index) => (
+            <button
+              key={index}
+              type="button"
+              onClick={() => handlePresetSelect(preset)}
+              className={`
+                px-3 py-1.5 text-sm font-medium rounded-lg transition-colors
+                focus:outline-none focus:ring-2 focus:ring-blue-500
+                ${mergedTheme.normalText} ${mergedTheme.normalHoverBg}
+              `}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Month Selector */}
       {activePanel === "month" && !disableMonthNav && (

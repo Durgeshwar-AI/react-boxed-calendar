@@ -39,6 +39,9 @@ const Home = () => {
   // Navigation State
   const [noNavDate, setNoNavDate] = useState<Date | null>(new Date());
 
+  // Presets State
+  const [presetRange, setPresetRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
+
   // Holiday dates (example: Christmas, New Year)
   const holidays = [
     new Date(new Date().getFullYear(), 11, 25), // December 25
@@ -383,6 +386,25 @@ const Home = () => {
           disableMonthNav
           selectedDate={noNavDate}
           onDateChange={setNoNavDate}
+        />
+      </CalendarSection>
+
+      {/* Date Range Presets */}
+      <CalendarSection
+        title="Quick Date Range Presets"
+        description="Add preset buttons for common date range selections like Today, Last 7 Days, This Month, Last Month."
+        code={`<Calendar
+  mode="range"
+  showPresets
+  selectedRange={selectedRange}
+  onRangeChange={(start, end) => setRange({ start, end })}
+/>`}
+      >
+        <Calendar 
+          mode="range"
+          showPresets
+          selectedRange={presetRange}
+          onRangeChange={(start, end) => setPresetRange({ start, end })}
         />
       </CalendarSection>
 

@@ -52,3 +52,44 @@ export const generateMonthGrid = (year: number, month: number, weekStartsOn: 0 |
 
   return grid;
 };
+
+// Helper to normalize date to midnight for accurate comparisons
+const normalizeDate = (date: Date): Date => {
+  const normalized = new Date(date);
+  normalized.setHours(0, 0, 0, 0);
+  return normalized;
+};
+
+// Preset date range utilities
+export const getToday = (): { start: Date; end: Date } => {
+  const today = normalizeDate(new Date());
+  return { start: today, end: today };
+};
+
+export const getLast7Days = (): { start: Date; end: Date } => {
+  const end = normalizeDate(new Date());
+  const start = new Date(end);
+  start.setDate(start.getDate() - 6);
+  return { start, end };
+};
+
+export const getLast30Days = (): { start: Date; end: Date } => {
+  const end = normalizeDate(new Date());
+  const start = new Date(end);
+  start.setDate(start.getDate() - 29);
+  return { start, end };
+};
+
+export const getThisMonth = (): { start: Date; end: Date } => {
+  const now = new Date();
+  const start = normalizeDate(new Date(now.getFullYear(), now.getMonth(), 1));
+  const end = normalizeDate(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+  return { start, end };
+};
+
+export const getLastMonth = (): { start: Date; end: Date } => {
+  const now = new Date();
+  const start = normalizeDate(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+  const end = normalizeDate(new Date(now.getFullYear(), now.getMonth(), 0));
+  return { start, end };
+};
