@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { themes } from "./themes";
+import { themes, getThemeForMonth, monthThemes } from "./themes";
 import {
   generateMonthGrid,
   isDateAfter,
@@ -83,7 +83,7 @@ export interface CalendarProps {
   };
   locale?: CalendarLocale;
   theme?: CalendarTheme;
-  themeName?: keyof typeof themes;
+  themeName?: keyof typeof themes | string;
   size?: "sm" | "md" | "lg";
   customSize?: {
     box?: number;
@@ -174,14 +174,25 @@ const Calendar = ({
   presets = DEFAULT_PRESETS,
   onPresetSelect,
 }: CalendarProps) => {
-  // Theme resolution: preset → defaults → user overrides
+  const [currentMonth, setCurrentMonth] = useState<Date>(
+    selectedDate ?? new Date(),
+  );
+  const [activePanel, setActivePanel] = useState<"month" | "year" | null>(null);
+  const [yearPageStart, setYearPageStart] = useState<number>(
+    (selectedDate ?? new Date()).getFullYear() - 6,
+  );
+
+  // Theme resolution: defaults → month theme → preset → user overrides
   const mergedTheme = useMemo(() => {
+    const monthIndex = currentMonth.getMonth();
+    const baseTheme = getThemeForMonth(themeName, monthIndex);
+
     return {
-      ...themes[themeName],
       ...DEFAULT_THEME,
+      ...baseTheme,
       ...userTheme,
     };
-  }, [themeName, userTheme]);
+  }, [currentMonth, themeName, userTheme]);
 
   // Locale resolution: defaults → user overrides
   const mergedLocale = useMemo(() => {
@@ -190,14 +201,6 @@ const Calendar = ({
       ...userLocale,
     };
   }, [userLocale]);
-
-  const [currentMonth, setCurrentMonth] = useState<Date>(
-    selectedDate ?? new Date(),
-  );
-  const [activePanel, setActivePanel] = useState<"month" | "year" | null>(null);
-  const [yearPageStart, setYearPageStart] = useState<number>(
-    (selectedDate ?? new Date()).getFullYear() - 6,
-  );
 
   // Sync view when selectedDate changes externally
   useEffect(() => {
@@ -241,9 +244,9 @@ const Calendar = ({
   // Merge color props with defaults
   const mergedHolidayColor = useMemo(
     () => ({
-      bg: "bg-red-100",
-      text: "text-red-700",
-      hoverBg: "hover:bg-red-200",
+      bg: "bg-white",
+      text: "text-black",
+      hoverBg: "hover:bg-gray-100",
       ...holidayColor,
     }),
     [holidayColor],
@@ -306,11 +309,30 @@ const Calendar = ({
     [selectedDates],
   );
 
-  // Selection handler
+  // Selection handler with automatic month navigation
   const handleSelect = useCallback(
     (date: Date) => {
       if (shouldDisable(date)) return;
 
+      // Auto-navigate to the clicked date's month if it's different from current month
+      const clickedMonth = date.getMonth();
+      const clickedYear = date.getFullYear();
+      const currentDisplayMonth = currentMonth.getMonth();
+      const currentDisplayYear = currentMonth.getFullYear();
+
+      // If the clicked date is from a different month/year, navigate to it
+      if (
+        clickedMonth !== currentDisplayMonth ||
+        clickedYear !== currentDisplayYear
+      ) {
+        const newMonth = new Date(currentMonth);
+        newMonth.setFullYear(clickedYear);
+        newMonth.setMonth(clickedMonth);
+        setCurrentMonth(newMonth);
+        setActivePanel(null);
+      }
+
+      // Then proceed with date selection
       if (mode === "single" && onDateChange) {
         onDateChange(date);
       } else if (mode === "range" && onRangeChange) {
@@ -327,11 +349,11 @@ const Calendar = ({
       } else if (mode === "multi" && onDatesChange) {
         const dateKey = date.toISOString();
         const isAlreadySelected = selectedDatesSet.has(dateKey);
-        
+
         if (isAlreadySelected) {
           // Remove date from selection
           const newDates = selectedDates.filter(
-            (d) => d.toISOString() !== dateKey
+            (d) => d.toISOString() !== dateKey,
           );
           onDatesChange(newDates);
         } else {
@@ -340,7 +362,17 @@ const Calendar = ({
         }
       }
     },
-    [mode, onDateChange, onRangeChange, selectedRange, shouldDisable, selectedDates, selectedDatesSet, onDatesChange],
+    [
+      mode,
+      onDateChange,
+      onRangeChange,
+      selectedRange,
+      shouldDisable,
+      selectedDates,
+      selectedDatesSet,
+      onDatesChange,
+      currentMonth,
+    ],
   );
 
   // Navigation handlers
@@ -402,7 +434,7 @@ const toggleYearPanel = useCallback(() => {
   return (
     <div
       className={`
-        p-6 shadow-lg select-none
+        p-4 sm:p-6 shadow-lg select-none max-w-full
         ${mergedTheme.containerBg}
         ${mergedTheme.containerBorder}
         ${mergedTheme.borderRadius}
@@ -413,8 +445,8 @@ const toggleYearPanel = useCallback(() => {
           : undefined
       }
     >
-{/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4 sm:mb-6 gap-2 flex-wrap">
         {!disableMonthNav && (
           <button
             onClick={() => changeMonth(-1)}
@@ -441,7 +473,7 @@ const toggleYearPanel = useCallback(() => {
           </button>
         )}
 
-        <div className="flex items-center gap-2 mx-auto">
+        <div className="flex items-center gap-1 sm:gap-2 mx-auto">
           <button
             type="button"
             onClick={toggleMonthPanel}
@@ -460,7 +492,7 @@ const toggleYearPanel = useCallback(() => {
             type="button"
             onClick={toggleYearPanel}
             className={`
-              font-bold text-xl px-2 py-1 rounded-lg transition-colors
+              font-bold text-sm sm:text-lg md:text-xl px-1 sm:px-2 py-1 rounded-lg transition-colors
               focus:outline-none focus:ring-2 focus:ring-blue-500
               ${disableMonthNav ? "cursor-default" : mergedTheme.normalHoverBg}
               ${mergedTheme.normalText}
@@ -645,11 +677,11 @@ const toggleYearPanel = useCallback(() => {
       )}
 
       {/* Weekday Headers */}
-      <div className="grid grid-cols-7 mb-2" style={{ gap: gridGap }}>
+      <div className="grid grid-cols-7 mb-2 sm:mb-3" style={{ gap: gridGap }}>
         {mergedLocale.weekDays.map((d, i) => (
           <div
             key={`weekday-${i}`}
-            className="text-center font-semibold text-gray-600 text-sm py-2"
+            className="text-center font-semibold text-gray-600 text-xs sm:text-sm py-1 sm:py-2"
             aria-label={d}
           >
             {d}
@@ -678,9 +710,10 @@ const toggleYearPanel = useCallback(() => {
             mode === "single"
               ? isSameDay(day, selectedDate)
               : mode === "multi"
-              ? selectedDatesSet.has(day.toISOString())
-              : (selectedRange.start && isSameDay(day, selectedRange.start)) ||
-                (selectedRange.end && isSameDay(day, selectedRange.end));
+                ? selectedDatesSet.has(day.toISOString())
+                : (selectedRange.start &&
+                    isSameDay(day, selectedRange.start)) ||
+                  (selectedRange.end && isSameDay(day, selectedRange.end));
 
           const isInRange =
             mode === "range" &&
@@ -731,7 +764,11 @@ const toggleYearPanel = useCallback(() => {
                 ${cellStyles}
               `}
             >
-              {day.getDate()}
+              {isHolidayDate ? (
+                <span className="text-red-600">{day.getDate()}</span>
+              ) : (
+                day.getDate()
+              )}
             </button>
           );
         })}
@@ -739,58 +776,74 @@ const toggleYearPanel = useCallback(() => {
 
       {/* Legend */}
       {mode === "single" && (
-        <div className="mt-6 flex items-center justify-center space-x-6 text-sm">
+        <div className="mt-4 sm:mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm">
           <div className="flex items-center">
-            <div className={`w-4 h-4 rounded mr-2 ${mergedTheme.selectedBg}`} />
+            <div
+              className={`w-3 h-3 sm:w-4 sm:h-4 rounded mr-2 ${mergedTheme.selectedBg}`}
+            />
             <span className={mergedTheme.normalText}>Selected</span>
           </div>
           {highlightToday && (
             <div className="flex items-center">
-              <div className={`w-4 h-4 rounded mr-2 ${mergedTheme.todayBg}`} />
+              <div
+                className={`w-3 h-3 sm:w-4 sm:h-4 rounded mr-2 ${mergedTheme.todayBg}`}
+              />
               <span className={mergedTheme.normalText}>Today</span>
             </div>
           )}
           <div className="flex items-center">
-            <div className={`w-4 h-4 rounded mr-2 ${mergedHolidayColor.bg}`} />
-            <span className={mergedHolidayColor.text}>Holiday</span>
+            <div
+              className={`w-3 h-3 sm:w-4 sm:h-4 rounded mr-2 ${mergedHolidayColor.bg}`}
+            />
+            <span className={mergedTheme.normalText}>Holiday</span>
           </div>
         </div>
       )}
 
       {mode === "range" && (
-        <div className="mt-6 flex items-center justify-center space-x-6 text-sm">
+        <div className="mt-4 sm:mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm">
           <div className="flex items-center">
-            <div className={`w-4 h-4 rounded mr-2 ${mergedTheme.selectedBg}`} />
+            <div
+              className={`w-3 h-3 sm:w-4 sm:h-4 rounded mr-2 ${mergedTheme.selectedBg}`}
+            />
             <span className={mergedTheme.normalText}>Start/End</span>
           </div>
           <div className="flex items-center">
-            <div className="w-4 h-4 bg-blue-50 border border-blue-200 rounded mr-2" />
+            <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-50 border border-blue-200 rounded mr-2" />
             <span className={mergedTheme.normalText}>In Range</span>
           </div>
           <div className="flex items-center">
-            <div className={`w-4 h-4 rounded mr-2 ${mergedHolidayColor.bg}`} />
-            <span className={mergedHolidayColor.text}>Holiday</span>
+            <div
+              className={`w-3 h-3 sm:w-4 sm:h-4 rounded mr-2 ${mergedHolidayColor.bg}`}
+            />
+            <span className={mergedTheme.normalText}>Holiday</span>
           </div>
         </div>
       )}
 
       {mode === "multi" && (
-        <div className="mt-6 flex items-center justify-center space-x-6 text-sm">
+        <div className="mt-4 sm:mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm">
           <div className="flex items-center">
-            <div className={`w-4 h-4 rounded mr-2 ${mergedTheme.selectedBg}`} />
+            <div
+              className={`w-3 h-3 sm:w-4 sm:h-4 rounded mr-2 ${mergedTheme.selectedBg}`}
+            />
             <span className={mergedTheme.normalText}>
               {selectedDates.length} selected
             </span>
           </div>
           {highlightToday && (
             <div className="flex items-center">
-              <div className={`w-4 h-4 rounded mr-2 ${mergedTheme.todayBg}`} />
+              <div
+                className={`w-3 h-3 sm:w-4 sm:h-4 rounded mr-2 ${mergedTheme.todayBg}`}
+              />
               <span className={mergedTheme.normalText}>Today</span>
             </div>
           )}
           <div className="flex items-center">
-            <div className={`w-4 h-4 rounded mr-2 ${mergedHolidayColor.bg}`} />
-            <span className={mergedHolidayColor.text}>Holiday</span>
+            <div
+              className={`w-3 h-3 sm:w-4 sm:h-4 rounded mr-2 ${mergedHolidayColor.bg}`}
+            />
+            <span className={mergedTheme.normalText}>Holiday</span>
           </div>
         </div>
       )}
