@@ -60,6 +60,15 @@ const normalizeDate = (date: Date): Date => {
   return normalized;
 };
 
+// Calculate the number of days between two dates
+export const getDaysDifference = (start: Date, end: Date): number => {
+  const normalizedStart = normalizeDate(start);
+  const normalizedEnd = normalizeDate(end);
+  const diffTime = Math.abs(normalizedEnd.getTime() - normalizedStart.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+};
+
 // Preset date range utilities
 export const getToday = (): { start: Date; end: Date } => {
   const today = normalizeDate(new Date());
