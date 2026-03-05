@@ -1,14 +1,16 @@
 import { useState } from "react";
 
-const Navbar = () => {
+interface NavbarProps {
+  activeSection?: string;
+  onSectionChange?: (section: string) => void;
+}
+
+const Navbar = ({ activeSection, onSectionChange }: NavbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-      setIsOpen(false);
-    }
+  const handleSectionClick = (id: string) => {
+    onSectionChange?.(id);
+    setIsOpen(false);
   };
 
   return (
@@ -32,32 +34,52 @@ const Navbar = () => {
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-6">
             <button
-              onClick={() => scrollToSection("modes")}
-              className="text-gray-600 hover:text-blue-600 transition-colors text-sm"
+              onClick={() => handleSectionClick("modes")}
+              className={`transition-colors text-sm font-medium ${
+                activeSection === "modes"
+                  ? "text-blue-600"
+                  : "text-gray-600 hover:text-blue-600"
+              }`}
             >
               Modes
             </button>
             <button
-              onClick={() => scrollToSection("themes")}
-              className="text-gray-600 hover:text-blue-600 transition-colors text-sm"
+              onClick={() => handleSectionClick("themes")}
+              className={`transition-colors text-sm font-medium ${
+                activeSection === "themes"
+                  ? "text-blue-600"
+                  : "text-gray-600 hover:text-blue-600"
+              }`}
             >
               Themes
             </button>
             <button
-              onClick={() => scrollToSection("sizes")}
-              className="text-gray-600 hover:text-blue-600 transition-colors text-sm"
+              onClick={() => handleSectionClick("sizes")}
+              className={`transition-colors text-sm font-medium ${
+                activeSection === "sizes"
+                  ? "text-blue-600"
+                  : "text-gray-600 hover:text-blue-600"
+              }`}
             >
               Sizes
             </button>
             <button
-              onClick={() => scrollToSection("constraints")}
-              className="text-gray-600 hover:text-blue-600 transition-colors text-sm"
+              onClick={() => handleSectionClick("constraints")}
+              className={`transition-colors text-sm font-medium ${
+                activeSection === "constraints"
+                  ? "text-blue-600"
+                  : "text-gray-600 hover:text-blue-600"
+              }`}
             >
               Constraints
             </button>
             <button
-              onClick={() => scrollToSection("localization")}
-              className="text-gray-600 hover:text-blue-600 transition-colors text-sm"
+              onClick={() => handleSectionClick("localization")}
+              className={`transition-colors text-sm font-medium ${
+                activeSection === "localization"
+                  ? "text-blue-600"
+                  : "text-gray-600 hover:text-blue-600"
+              }`}
             >
               Localization
             </button>
@@ -107,32 +129,52 @@ const Navbar = () => {
         {isOpen && (
           <div className="md:hidden mt-3 pt-3 border-t border-gray-200 space-y-2">
             <button
-              onClick={() => scrollToSection("modes")}
-              className="block w-full text-left px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors text-sm"
+              onClick={() => handleSectionClick("modes")}
+              className={`block w-full text-left px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
+                activeSection === "modes"
+                  ? "bg-blue-50 text-blue-600"
+                  : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
+              }`}
             >
               Modes
             </button>
             <button
-              onClick={() => scrollToSection("themes")}
-              className="block w-full text-left px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors text-sm"
+              onClick={() => handleSectionClick("themes")}
+              className={`block w-full text-left px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
+                activeSection === "themes"
+                  ? "bg-blue-50 text-blue-600"
+                  : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
+              }`}
             >
               Themes
             </button>
             <button
-              onClick={() => scrollToSection("sizes")}
-              className="block w-full text-left px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors text-sm"
+              onClick={() => handleSectionClick("sizes")}
+              className={`block w-full text-left px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
+                activeSection === "sizes"
+                  ? "bg-blue-50 text-blue-600"
+                  : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
+              }`}
             >
               Sizes
             </button>
             <button
-              onClick={() => scrollToSection("constraints")}
-              className="block w-full text-left px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors text-sm"
+              onClick={() => handleSectionClick("constraints")}
+              className={`block w-full text-left px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
+                activeSection === "constraints"
+                  ? "bg-blue-50 text-blue-600"
+                  : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
+              }`}
             >
               Constraints
             </button>
             <button
-              onClick={() => scrollToSection("localization")}
-              className="block w-full text-left px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors text-sm"
+              onClick={() => handleSectionClick("localization")}
+              className={`block w-full text-left px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
+                activeSection === "localization"
+                  ? "bg-blue-50 text-blue-600"
+                  : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
+              }`}
             >
               Localization
             </button>
