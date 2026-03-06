@@ -4,6 +4,7 @@ import { metallicTheme } from "./metallic";
 import { cyberpunkTheme } from "./cyberpunk";
 import { retroTheme } from "./retro";
 import { natureTheme } from "./nature";
+import { monthThemes as seasonalThemes } from "./seasonal";
 
 export type CalendarTheme = {
   containerBg?: string;
@@ -19,6 +20,7 @@ export type CalendarTheme = {
   borderRadius: string;
 };
 
+// Static themes (single theme object)
 export const themes: Record<string, CalendarTheme> = {
   light: lightTheme,
   dark: darkTheme,
@@ -27,3 +29,19 @@ export const themes: Record<string, CalendarTheme> = {
   retro: retroTheme,
   nature: natureTheme,
 };
+
+export const monthlyThemes: Record<string, Record<number, CalendarTheme>> = {
+  seasonal: seasonalThemes,
+};
+
+export function getThemeForMonth(
+  themeName: string,
+  monthIndex: number
+): CalendarTheme {
+  if (themeName in monthlyThemes) {
+    return monthlyThemes[themeName][monthIndex];
+  }
+  return themes[themeName] || themes.light;
+}
+
+export { monthThemes } from "./seasonal";
