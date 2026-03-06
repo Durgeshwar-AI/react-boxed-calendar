@@ -290,8 +290,8 @@ const Calendar = ({
     return monthsArray;
   }, [currentMonth, numberOfMonths, weekStartsOn]);
 
-  // For backwards compatibility, keep the single month days
-  const days = months[0]?.days || [];
+  // For backwards compatibility, keep the single month days (memoized)
+  const days = useMemo(() => months[0]?.days || [], [months]);
 
   // Check if date is a holiday
   const isHoliday = useCallback(
