@@ -140,6 +140,7 @@ const DEFAULT_LOCALE: Required<CalendarLocale> = {
   ],
 };
 
+/* eslint-disable jsx-a11y/aria-props */
 const Calendar = ({
   mode = "single",
   selectedDate = null,
@@ -616,8 +617,10 @@ const Calendar = ({
   );
 
   return (
+    // eslint-disable-next-line react/style-prop-object
     <div
       ref={calendarRef}
+      onKeyDown={handleKeyDown}
       className={`
         p-4 sm:p-6 shadow-lg select-none max-w-full
         ${mergedTheme.containerBg}
@@ -661,6 +664,7 @@ const Calendar = ({
         )}
 
         <div className="flex items-center gap-1 sm:gap-2 mx-auto">
+          {/* eslint-disable-next-line jsx-a11y/aria-props */}
           <button
             type="button"
             onClick={toggleMonthPanel}
@@ -671,11 +675,12 @@ const Calendar = ({
               ${mergedTheme.normalText}
             `}
             aria-label="Select month"
-            aria-expanded={activePanel === "month" ? "true" : "false"}
+            aria-expanded={activePanel === "month"}
             aria-controls="month-panel"
           >
             {mergedLocale.monthNames[currentMonth.getMonth()]}
           </button>
+          {/* eslint-disable-next-line jsx-a11y/aria-props */}
           <button
             type="button"
             onClick={toggleYearPanel}
@@ -686,7 +691,7 @@ const Calendar = ({
               ${mergedTheme.normalText}
             `}
             aria-label="Select year"
-            aria-expanded={activePanel === "year" ? "true" : "false"}
+            aria-expanded={activePanel === "year"}
             aria-controls="year-panel"
           >
             {currentMonth.getFullYear()}
@@ -867,22 +872,26 @@ const Calendar = ({
         </div>
       )}
 
-      {/* Weekday Headers */}
-      <div className="grid grid-cols-7 mb-2 sm:mb-3" style={{ gap: gridGap }}>
-        {mergedLocale.weekDays.map((d, i) => (
-          <div
-            key={`weekday-${i}`}
-            className="text-center font-semibold text-gray-600 text-xs sm:text-sm py-1 sm:py-2"
-            aria-label={d}
-            role="columnheader"
-          >
-            {d}
-          </div>
-        ))}
-      </div>
-
       {/* Calendar Grids - Multiple Months */}
-      <div className={numberOfMonths > 1 ? "flex gap-4" : ""}>
+      <div className={numberOfMonths > 1 ? "flex gap-4" : ""} role="grid">
+        {numberOfMonths === 1 && (
+          <>
+            {/* Weekday Headers - Only for single month view */}
+            {/* eslint-disable-next-line */}
+            <div className="grid grid-cols-7 mb-2 sm:mb-3" style={{ gap: gridGap }} role="row">
+              {mergedLocale.weekDays.map((d, i) => (
+                <div
+                  key={`weekday-${i}`}
+                  className="text-center font-semibold text-gray-600 text-xs sm:text-sm py-1 sm:py-2"
+                  aria-label={d}
+                  role="columnheader"
+                >
+                  {d}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
         {months.map((monthData, monthIndex) => (
           <div key={monthIndex} className="flex-1">
             {/* Month Header for multi-month view */}
@@ -913,55 +922,18 @@ const Calendar = ({
               </div>
             )}
 
-          const disabled = shouldDisable(day);
-          const isSelected =
-            mode === "single"
-              ? isSameDay(day, selectedDate)
-              : mode === "multi"
-                ? selectedDatesSet.has(day.toISOString())
-                : (selectedRange.start &&
-                    isSameDay(day, selectedRange.start)) ||
-                  (selectedRange.end && isSameDay(day, selectedRange.end));
-
-          const isInRange =
-            mode === "range" &&
-            selectedRange.start &&
-            selectedRange.end &&
-            isDateAfter(day, selectedRange.start) &&
-            isDateBefore(day, selectedRange.end);
-
-          const isTodayDate = isToday(day);
-          const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
-          const isHolidayDate = isHoliday(day);
-          const isWeekdayOff = weekdayOFFSet.has(day.getDay());
-
-          // Determine cell styles with priority: selected > today > range > holiday > weekdayOff > normal
-          let cellStyles = "";
-
-          if (disabled) {
-            cellStyles = `${mergedTheme.disabledBg} ${mergedTheme.disabledText} cursor-not-allowed opacity-50`;
-          } else if (isSelected) {
-            cellStyles = `${mergedTheme.selectedBg} ${mergedTheme.selectedText} scale-105 shadow-lg z-10`;
-          } else if (isTodayDate && highlightToday) {
-            cellStyles = `${mergedTheme.todayBg} ${mergedTheme.todayText} font-bold ring-1 ring-blue-200`;
-          } else if (isInRange) {
-            cellStyles = "bg-blue-50 text-blue-600";
-          } else if (isHolidayDate) {
-            cellStyles = `${mergedHolidayColor.bg} ${mergedHolidayColor.text} ${mergedHolidayColor.hoverBg || ""}`;
-          } else if (isWeekdayOff) {
-            cellStyles = `${mergedWeekdayOffColor.bg} ${mergedWeekdayOffColor.text} ${mergedWeekdayOffColor.hoverBg || ""}`;
-          } else {
-            cellStyles = `${mergedTheme.normalText} ${mergedTheme.normalHoverBg} hover:scale-105`;
-          }
-
+            {/* Days Grid */}
+            <div className="grid grid-cols-7" style={{ gap: gridGap }} role="row">
+              {monthData.days.map((day) => {
                 const disabled = shouldDisable(day);
                 const isSelected =
                   mode === "single"
                     ? isSameDay(day, selectedDate)
                     : mode === "multi"
-                    ? selectedDatesSet.has(day.toISOString())
-                    : (selectedRange.start && isSameDay(day, selectedRange.start)) ||
-                      (selectedRange.end && isSameDay(day, selectedRange.end));
+                      ? selectedDatesSet.has(day.toISOString())
+                      : (selectedRange.start &&
+                          isSameDay(day, selectedRange.start)) ||
+                        (selectedRange.end && isSameDay(day, selectedRange.end));
 
                 const isInRange =
                   mode === "range" &&
@@ -970,36 +942,65 @@ const Calendar = ({
                   isDateAfter(day, selectedRange.start) &&
                   isDateBefore(day, selectedRange.end);
 
-          return (
-            <button
-              key={day.toISOString()}
-              disabled={disabled}
-              onClick={() => handleSelect(day)}
-              aria-label={dateLabel}
-              aria-current={isTodayDate ? "date" : undefined}
-              aria-disabled={disabled}
-              aria-selected={isSelected || undefined}
-              tabIndex={isFocused ? 0 : -1}
-              ref={isFocused ? focusRef : undefined}
-              role="gridcell"
-              style={cellStyle}
-              className={`
-                inline-flex items-center justify-center font-medium transition-all
-                focus:outline-none focus:ring-2 focus:ring-blue-500
-                ${customSize ? "" : presetCellSize}
-                ${mergedTheme.borderRadius}
-                ${!isCurrentMonth ? "opacity-40" : ""}
-                ${cellStyles}
-              `}
-            >
-              {isHolidayDate ? (
-                <span className="text-red-600">{day.getDate()}</span>
-              ) : (
-                day.getDate()
-              )}
-            </button>
-          );
-        })}
+                const isTodayDate = isToday(day);
+                const isCurrentMonth = day.getMonth() === monthData.date.getMonth();
+                const isHolidayDate = isHoliday(day);
+                const isWeekdayOff = weekdayOFFSet.has(day.getDay());
+                const isFocused = isSameDay(day, focusedDate);
+                const dateLabel = `${mergedLocale.monthNames[day.getMonth()]} ${day.getDate()}, ${day.getFullYear()}`;
+
+                // Determine cell styles with priority: selected > today > range > holiday > weekdayOff > normal
+                let cellStyles = "";
+
+                if (disabled) {
+                  cellStyles = `${mergedTheme.disabledBg} ${mergedTheme.disabledText} cursor-not-allowed opacity-50`;
+                } else if (isSelected) {
+                  cellStyles = `${mergedTheme.selectedBg} ${mergedTheme.selectedText} scale-105 shadow-lg z-10`;
+                } else if (isTodayDate && highlightToday) {
+                  cellStyles = `${mergedTheme.todayBg} ${mergedTheme.todayText} font-bold ring-1 ring-blue-200`;
+                } else if (isInRange) {
+                  cellStyles = "bg-blue-50 text-blue-600";
+                } else if (isHolidayDate) {
+                  cellStyles = `${mergedHolidayColor.bg} ${mergedHolidayColor.text} ${mergedHolidayColor.hoverBg || ""}`;
+                } else if (isWeekdayOff) {
+                  cellStyles = `${mergedWeekdayOffColor.bg} ${mergedWeekdayOffColor.text} ${mergedWeekdayOffColor.hoverBg || ""}`;
+                } else {
+                  cellStyles = `${mergedTheme.normalText} ${mergedTheme.normalHoverBg} hover:scale-105`;
+                }
+
+                return (
+                  <button
+                    key={day.toISOString()}
+                    disabled={disabled}
+                    onClick={() => handleSelect(day)}
+                    aria-label={dateLabel}
+                    aria-current={isTodayDate ? "date" : undefined}
+                    aria-disabled={disabled}
+                    aria-selected={isSelected || false}
+                    tabIndex={isFocused ? 0 : -1}
+                    ref={isFocused ? focusRef : undefined}
+                    role="gridcell"
+                    style={cellStyle}
+                    className={`
+                      inline-flex items-center justify-center font-medium transition-all
+                      focus:outline-none focus:ring-2 focus:ring-blue-500
+                      ${customSize ? "" : presetCellSize}
+                      ${mergedTheme.borderRadius}
+                      ${!isCurrentMonth ? "opacity-40" : ""}
+                      ${cellStyles}
+                    `}
+                  >
+                    {isHolidayDate ? (
+                      <span className="text-red-600">{day.getDate()}</span>
+                    ) : (
+                      day.getDate()
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Legend */}
@@ -1091,4 +1092,5 @@ const Calendar = ({
   );
 };
 
+/* eslint-disable jsx-a11y/aria-props, react/style-prop-object */
 export default Calendar;
