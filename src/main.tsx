@@ -5,6 +5,6 @@ import { Calendar } from './index';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Calendar />
+    <Calendar themeName='seasonal' />
   </StrictMode>
 );
