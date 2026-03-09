@@ -3,6 +3,8 @@ import Navbar from "../components/Navbar";
 import CalendarSection from "../components/CalendarSection";
 import { Calendar } from "react-boxed-calendar";
 
+type ThemeName = "light" | "dark" | "metallic" | "cyberpunk" | "retro" | "nature" | "seasonal";
+
 const Home = () => {
   // Selection Mode States
   const [singleDate, setSingleDate] = useState<Date | null>(new Date());
@@ -13,12 +15,10 @@ const Home = () => {
   const [multiDates, setMultiDates] = useState<Date[]>([]);
 
   // Theme States
-  const [lightDate, setLightDate] = useState<Date | null>(new Date());
-  const [darkDate, setDarkDate] = useState<Date | null>(new Date());
-  const [metallicDate, setMetallicDate] = useState<Date | null>(new Date());
-  const [cyberpunkDate, setCyberpunkDate] = useState<Date | null>(new Date());
-  const [retroDate, setRetroDate] = useState<Date | null>(new Date());
-  const [natureDate, setNatureDate] = useState<Date | null>(new Date());
+  const [selectedTheme, setSelectedTheme] = useState<ThemeName>("light");
+  const [themeDate, setThemeDate] = useState<Date | null>(new Date());
+  
+  const themes: ThemeName[] = ["light", "dark", "metallic", "cyberpunk", "retro", "nature", "seasonal"];
 
   // Size States
   const [smDate, setSmDate] = useState<Date | null>(new Date());
@@ -200,96 +200,47 @@ const Home = () => {
             onDatesChange={setMultiDates}
           />
         </CalendarSection>
+      </div>
 
-        {/* Themes - Light & Dark */}
+      {/* Themes */}
+      <div id="themes">
         <CalendarSection
           title="Themes"
-          description="Choose from 6 built-in themes or create your own custom theme."
-          code={`<Calendar themeName="light" />
-<Calendar themeName="dark" />
-<Calendar themeName="metallic" />
-<Calendar themeName="cyberpunk" />
-<Calendar themeName="retro" />
-<Calendar themeName="nature" />`}
+          description="Choose from 7 built-in themes or create your own custom theme."
+          code={`<Calendar themeName="${selectedTheme}" />`}
         >
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
-            <div className="flex flex-col items-center">
-              <h4 className="text-sm font-semibold text-gray-500 mb-3 text-center">
-                Light
-              </h4>
-              <Calendar
-                themeName="light"
-                selectedDate={lightDate}
-                onDateChange={setLightDate}
-              />
+          <div className="w-full flex flex-col items-center gap-6">
+            {/* Theme Selector */}
+            <div className="flex flex-wrap justify-center gap-2">
+              {themes.map((theme) => (
+                <button
+                  key={theme}
+                  onClick={() => setSelectedTheme(theme)}
+                  className={`px-3 sm:px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                    selectedTheme === theme
+                      ? "bg-blue-600 text-white shadow-md"
+                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}
+                >
+                  {theme.charAt(0).toUpperCase() + theme.slice(1)}
+                </button>
+              ))}
             </div>
-            <div className="flex flex-col items-center">
-              <h4 className="text-sm font-semibold text-gray-500 mb-3 text-center">
-                Dark
-              </h4>
+            
+            {/* Calendar Display */}
+            <div className="flex justify-center">
               <Calendar
-                themeName="dark"
-                selectedDate={darkDate}
-                onDateChange={setDarkDate}
+                themeName={selectedTheme}
+                selectedDate={themeDate}
+                onDateChange={setThemeDate}
               />
             </div>
           </div>
         </CalendarSection>
+      </div>
 
-        {/* Themes - More */}
-        <CalendarSection
-          title="More Themes"
-          description="Explore additional themes for different aesthetics."
-          code={`<Calendar themeName="metallic" />
-<Calendar themeName="cyberpunk" />
-<Calendar themeName="retro" />
-<Calendar themeName="nature" />`}
-        >
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
-            <div className="flex flex-col items-center">
-              <h4 className="text-sm font-semibold text-gray-500 mb-3 text-center">
-                Metallic
-              </h4>
-              <Calendar
-                themeName="metallic"
-                selectedDate={metallicDate}
-                onDateChange={setMetallicDate}
-              />
-            </div>
-            <div className="flex flex-col items-center">
-              <h4 className="text-sm font-semibold text-gray-500 mb-3 text-center">
-                Cyberpunk
-              </h4>
-              <Calendar
-                themeName="cyberpunk"
-                selectedDate={cyberpunkDate}
-                onDateChange={setCyberpunkDate}
-              />
-            </div>
-            <div className="flex flex-col items-center">
-              <h4 className="text-sm font-semibold text-gray-500 mb-3 text-center">
-                Retro
-              </h4>
-              <Calendar
-                themeName="retro"
-                selectedDate={retroDate}
-                onDateChange={setRetroDate}
-              />
-            </div>
-            <div className="flex flex-col items-center">
-              <h4 className="text-sm font-semibold text-gray-500 mb-3 text-center">
-                Nature
-              </h4>
-              <Calendar
-                themeName="nature"
-                selectedDate={natureDate}
-                onDateChange={setNatureDate}
-              />
-            </div>
-          </div>
-        </CalendarSection>
-
-        {/* Sizes - Preset */}
+      {/* Sizes - Preset */}
+      <div id="sizes">
         <CalendarSection
           title="Sizes"
           description="Three preset sizes plus custom sizing options."
@@ -338,33 +289,35 @@ const Home = () => {
             </div>
           </div>
         </CalendarSection>
+      </div>
 
-        {/* Custom Size */}
-        <CalendarSection
-          title="Custom Size"
-          description="Fully customize the calendar dimensions."
-          code={`<Calendar 
+      {/* Custom Size */}
+      <CalendarSection
+        title="Custom Size"
+        description="Fully customize the calendar dimensions."
+        code={`<Calendar 
   customSize={{
     box: 450,
     cell: 50,
     gap: 12
   }}
 />`}
-        >
-          <div className="w-full flex justify-center">
-            <Calendar
-              customSize={{
-                box: 550,
-                cell: 50,
-                gap: 12,
-              }}
-              selectedDate={customDate}
-              onDateChange={setCustomDate}
-            />
-          </div>
-        </CalendarSection>
+      >
+        <div className="w-full flex justify-center">
+          <Calendar
+            customSize={{
+              box: 550,
+              cell: 50,
+              gap: 12,
+            }}
+            selectedDate={customDate}
+            onDateChange={setCustomDate}
+          />
+        </div>
+      </CalendarSection>
 
-        {/* Date Constraints - Disable Past & Future */}
+      {/* Date Constraints - Disable Past & Future */}
+      <div id="constraints">
         <CalendarSection
           title="Date Constraints"
           description="Disable past or future dates, weekends, or implement custom disable logic."
@@ -431,9 +384,10 @@ const Home = () => {
             </div>
           </div>
         </CalendarSection>
+      </div>
 
-        {/* Holidays */}
-        <CalendarSection
+      {/* Holidays */}
+      <CalendarSection
           title="Holidays"
           description="Highlight specific dates as holidays with custom styling."
           code={`<Calendar 
@@ -452,8 +406,8 @@ const Home = () => {
           />
         </CalendarSection>
 
-        {/* Weekday Off */}
-        <CalendarSection
+      {/* Weekday Off */}
+      <CalendarSection
           title="Weekday Off"
           description="Mark specific weekdays as off days with custom styling."
           code={`<Calendar 
@@ -471,7 +425,8 @@ const Home = () => {
           />
         </CalendarSection>
 
-        {/* Localization */}
+      {/* Localization */}
+      <div id="localization">
         <CalendarSection
           title="Localization"
           description="Customize weekday names and month names for any locale."
@@ -491,9 +446,10 @@ const Home = () => {
             onDateChange={setLocaleDate}
           />
         </CalendarSection>
+      </div>
 
-        {/* Navigation */}
-        <CalendarSection
+      {/* Navigation */}
+      <CalendarSection
           title="Disable Navigation"
           description="Optionally disable month/year navigation for fixed date selection."
           code={`<Calendar disableMonthNav />`}
@@ -505,16 +461,15 @@ const Home = () => {
           />
         </CalendarSection>
 
-        {/* Footer */}
-        <footer className="py-8 sm:py-12 px-4 bg-gray-900 text-gray-400">
-          <div className="max-w-6xl mx-auto text-center">
-            <p className="mb-4">
-              React Boxed Calendar - A beautiful calendar component for React
-            </p>
-            <p className="text-sm">Built with ❤️ for the React community</p>
-          </div>
-        </footer>
-      </div>
+      {/* Footer */}
+      <footer className="py-8 sm:py-12 px-4 bg-gray-900 text-gray-400">
+        <div className="max-w-6xl mx-auto text-center">
+          <p className="mb-4">
+            React Boxed Calendar - A beautiful calendar component for React
+          </p>
+          <p className="text-sm">Built with ❤️ for the React community</p>
+        </div>
+      </footer>
     </div>
   );
 };
