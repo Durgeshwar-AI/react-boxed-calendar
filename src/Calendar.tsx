@@ -139,8 +139,6 @@ const DEFAULT_LOCALE: Required<CalendarLocale> = {
     "December",
   ],
 };
-
-/* eslint-disable jsx-a11y/aria-props */
 const Calendar = ({
   mode = "single",
   selectedDate = null,
@@ -617,7 +615,6 @@ const Calendar = ({
   );
 
   return (
-    // eslint-disable-next-line react/style-prop-object
     <div
       ref={calendarRef}
       onKeyDown={handleKeyDown}
@@ -664,7 +661,6 @@ const Calendar = ({
         )}
 
         <div className="flex items-center gap-1 sm:gap-2 mx-auto">
-          {/* eslint-disable-next-line jsx-a11y/aria-props */}
           <button
             type="button"
             onClick={toggleMonthPanel}
@@ -680,7 +676,6 @@ const Calendar = ({
           >
             {mergedLocale.monthNames[currentMonth.getMonth()]}
           </button>
-          {/* eslint-disable-next-line jsx-a11y/aria-props */}
           <button
             type="button"
             onClick={toggleYearPanel}
@@ -1091,6 +1086,4 @@ const Calendar = ({
     </div>
   );
 };
-
-/* eslint-disable jsx-a11y/aria-props, react/style-prop-object */
 export default Calendar;
